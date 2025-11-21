@@ -1,13 +1,12 @@
 
-const CACHE_NAME = 'reliance-pms-v3';
+const CACHE_NAME = 'reliance-pms-v4';
 const urlsToCache = [
   '/',
   '/index.html',
-  // We try to cache manifest, but don't fail if it's missing in dev
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Force activation
+  self.skipWaiting(); // Force activation immediately
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -25,9 +24,7 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-        return fetch(event.request).catch(() => {
-            // Optional: Return a fallback offline page here
-        });
+        return fetch(event.request);
       })
   );
 });
@@ -39,11 +36,12 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            // Delete old caches to ensure users get the new version
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
-  return self.clients.claim();
+  return self.clients.claim(); // Take control of all pages immediately
 });

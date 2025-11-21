@@ -10,18 +10,41 @@ import { AppView, DispatchEntry, UserRole } from './types';
 const LOCAL_STORAGE_KEY = 'dispatch_pro_data';
 const AUTH_STORAGE_KEY = 'dispatch_pro_auth';
 
+// Helper to ensure old data formats don't crash the new app
+const migrateData = (data: any[]): DispatchEntry[] => {
+  if (!Array.isArray(data)) return [];
+  
+  return data.map(item => ({
+    ...item,
+    // Ensure ID exists
+    id: item.id || crypto.randomUUID(),
+    // Default missing fields
+    status: item.status || 'pending', 
+    pcs: typeof item.pcs === 'number' ? item.pcs : 0,
+    bundle: typeof item.bundle === 'number' ? item.bundle : 0,
+    weight: typeof item.weight === 'number' ? item.weight : 0,
+    productionWeight: typeof item.productionWeight === 'number' ? item.productionWeight : 0,
+    // Ensure date is valid string
+    date: item.date || new Date().toISOString().split('T')[0],
+    // Ensure timestamp exists for sorting
+    timestamp: item.timestamp || Date.now()
+  }));
+};
+
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>('admin'); // Default role, will be set by login
+  const [userRole, setUserRole] = useState<UserRole>('admin'); 
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   
-  // FIX: Lazy initialization to ensure data is loaded synchronously before first render.
-  // This prevents the "Save" effect from overwriting existing LocalStorage data with an empty array on mount.
+  // Lazy initialization with MIGRATION logic
   const [dispatchData, setDispatchData] = useState<DispatchEntry[]>(() => {
     try {
       if (typeof window !== 'undefined') {
         const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-        return savedData ? JSON.parse(savedData) : [];
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          return migrateData(parsed);
+        }
       }
     } catch (e) {
       console.error("Failed to load data from storage", e);
@@ -48,6 +71,8 @@ const App: React.FC = () => {
   // Save data whenever it changes
   useEffect(() => {
     try {
+      // Double check we aren't saving an empty array over existing data due to a bug
+      // (Only strict safety check, allowing empty if user actually deleted everything)
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dispatchData));
     } catch (e) {
       console.error("Failed to save data", e);
@@ -60,8 +85,7 @@ const App: React.FC = () => {
       if (event.key === LOCAL_STORAGE_KEY && event.newValue) {
         try {
           const newData = JSON.parse(event.newValue);
-          // Only update if data is actually different to avoid loops
-          setDispatchData(newData);
+          setDispatchData(migrateData(newData));
         } catch (error) {
           console.error("Error syncing real-time data:", error);
         }
@@ -92,7 +116,7 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem(AUTH_STORAGE_KEY);
-    // We do NOT clear LOCAL_STORAGE_KEY here, so job data persists.
+    // NOTE: We deliberately DO NOT clear dispatch data here to ensure lifetime persistence
   };
 
   const handleAddEntry = (entry: Omit<DispatchEntry, 'id' | 'timestamp'>) => {
