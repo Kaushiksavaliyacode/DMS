@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { DispatchEntryView } from './views/DispatchEntry';
 import { DashboardView } from './views/Dashboard';

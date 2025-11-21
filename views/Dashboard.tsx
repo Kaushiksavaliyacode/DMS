@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { DispatchEntry, DispatchStatus } from '../types';
 import { 
   Search, Filter, ArrowUpDown, 
-  ArrowUp, ArrowDown, Package, Scale, TrendingUp, XCircle, Layers, Calendar, ChevronRight, AlertTriangle
+  ArrowUp, ArrowDown, Package, Scale, TrendingUp, XCircle, Layers, Calendar, AlertTriangle
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -278,8 +278,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                             <tbody className="divide-y divide-slate-100 bg-white">
                                 {sortedData.map((entry) => {
                                     const wastage = (entry.productionWeight || 0) > 0 ? (entry.productionWeight - entry.weight) : 0;
-                                    const isWastageHigh = wastage > 50; // Example threshold
-
+                                    
                                     return (
                                         <tr key={entry.id} className="hover:bg-slate-50 transition-colors group">
                                             <td className="py-2.5 px-1 pl-3 align-middle text-xs font-medium text-slate-500 whitespace-nowrap">
