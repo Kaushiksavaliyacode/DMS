@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { DispatchEntry, DispatchStatus } from '../types';
 import { 
   Search, Filter, ArrowUpDown, 
-  ArrowUp, ArrowDown, Package, Scale, TrendingUp, XCircle, Layers, Calendar, AlertTriangle, Users, List
+  ArrowUp, ArrowDown, Package, Scale, TrendingUp, XCircle, Layers, Calendar, Users, List
 } from 'lucide-react';
 
 interface DashboardProps {
