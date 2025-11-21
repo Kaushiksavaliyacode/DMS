@@ -22,10 +22,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
   const NavTab = ({ view, label, icon: Icon }: { view: AppView, label: string, icon: React.ElementType }) => (
     <button
       onClick={() => setView(view)}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+      className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${
         currentView === view 
-          ? 'bg-white/10 text-white' 
-          : 'text-slate-400 hover:text-white hover:bg-white/5'
+          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 transform scale-105' 
+          : 'text-slate-500 hover:text-indigo-600 hover:bg-indigo-50'
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -34,44 +34,44 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc] font-sans">
-      {/* Top Header - Single Screen Navigation */}
-      <header className="h-16 bg-slate-900 text-white flex items-center justify-between px-4 md:px-8 sticky top-0 z-50 shadow-lg shadow-slate-900/10 border-b border-slate-800">
+    <div className="min-h-screen flex flex-col bg-slate-50 font-sans selection:bg-indigo-100 selection:text-indigo-700">
+      {/* Top Header - Glassmorphism */}
+      <header className="h-20 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 md:px-10 sticky top-0 z-50 border-b border-slate-100">
         
         {/* Left: Brand */}
-        <div className="flex items-center gap-3">
-           <div className="bg-indigo-600 p-2 rounded-lg">
-              <Box className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-4">
+           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl shadow-lg shadow-indigo-200">
+              <Box className="w-6 h-6 text-white" />
            </div>
-           <div className="leading-tight">
-              <h1 className="text-lg font-extrabold tracking-tight">RDMS</h1>
+           <div>
+              <h1 className="text-xl font-black tracking-tight text-slate-800">RDMS</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Production</p>
            </div>
         </div>
 
         {/* Center: Navigation (Admin Only) */}
         {userRole === 'admin' && (
-           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 flex bg-slate-800/50 rounded-xl p-1 border border-slate-700/50 backdrop-blur-sm">
+           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 flex bg-white/50 rounded-full p-1.5 border border-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-sm">
               <NavTab view={AppView.DASHBOARD} label="Dashboard" icon={LayoutDashboard} />
-              <div className="w-px h-4 bg-slate-700 mx-1 self-center"></div>
               <NavTab view={AppView.ANALYTICS} label="Analytics" icon={BarChart3} />
            </div>
         )}
 
         {/* Right: Actions & Logout */}
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-3 md:gap-6">
            {userRole === 'admin' && (
-              <div className="flex items-center gap-1 mr-2 border-r border-slate-800 pr-4">
+              <div className="flex items-center gap-2 mr-2 border-r border-slate-200 pr-6">
                  <button 
                     onClick={onExport} 
                     title="Backup Data"
-                    className="p-2 text-slate-400 hover:text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition-colors"
+                    className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                  >
                     <Download className="w-5 h-5" />
                  </button>
                  <button 
                     onClick={triggerImport} 
                     title="Restore Data"
-                    className="p-2 text-slate-400 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-colors"
+                    className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                  >
                     <Upload className="w-5 h-5" />
                  </button>
@@ -79,30 +79,35 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
               </div>
            )}
 
-           <div className="hidden md:flex items-center gap-2 text-right mr-2">
-              <div className={`p-1.5 rounded-full ${userRole === 'admin' ? 'bg-indigo-500/20' : 'bg-emerald-500/20'}`}>
-                 {userRole === 'admin' ? <Shield className="w-4 h-4 text-indigo-400" /> : <User className="w-4 h-4 text-emerald-400" />}
+           <div className="hidden md:flex items-center gap-3 text-right mr-2">
+              <div className={`p-2 rounded-full ${userRole === 'admin' ? 'bg-indigo-50 text-indigo-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                 {userRole === 'admin' ? <Shield className="w-4 h-4" /> : <User className="w-4 h-4" />}
               </div>
-              <div className="text-xs">
-                 <div className="font-bold text-slate-200">{userRole === 'admin' ? 'Admin' : 'User'}</div>
+              <div>
+                 <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">{userRole === 'admin' ? 'Admin' : 'User'}</div>
+                 <div className="text-[10px] font-medium text-slate-400">Logged In</div>
               </div>
            </div>
 
            <button 
               onClick={onLogout}
-              className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-400 px-4 py-2 rounded-lg text-xs font-bold transition-all border border-red-500/20 group"
+              className="flex items-center gap-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-500 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border border-slate-200 hover:border-red-100 shadow-sm hover:shadow-md group"
            >
               <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              <span>Logout</span>
+              <span className="hidden md:inline">Logout</span>
            </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto relative p-4 md:p-8 max-w-[1800px] mx-auto w-full">
-         {/* Content Background Gradient */}
-         <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-slate-200/50 to-transparent pointer-events-none -z-10"></div>
-         {children}
+      <main className="flex-1 overflow-hidden relative w-full">
+         {/* Soft ambient background blobs */}
+         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-100/40 rounded-full blur-[120px] pointer-events-none"></div>
+         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-100/40 rounded-full blur-[120px] pointer-events-none"></div>
+         
+         <div className="h-full overflow-auto p-4 md:p-8 max-w-[1920px] mx-auto relative z-10">
+            {children}
+         </div>
       </main>
     </div>
   );
