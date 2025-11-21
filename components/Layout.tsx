@@ -1,6 +1,6 @@
 
-import React, { ReactNode } from 'react';
-import { LayoutDashboard, PenTool, BarChart3, Box, Menu, X, Shield, User, LogOut, ChevronRight } from 'lucide-react';
+import React, { ReactNode, useRef } from 'react';
+import { LayoutDashboard, PenTool, BarChart3, Box, Menu, X, Shield, User, LogOut, ChevronRight, Download, Upload } from 'lucide-react';
 import { AppView, UserRole } from '../types';
 
 interface LayoutProps {
@@ -9,6 +9,8 @@ interface LayoutProps {
   setView: (view: AppView) => void;
   userRole: UserRole;
   onLogout: () => void;
+  onExport: () => void;
+  onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const SidebarItem = ({ 
@@ -37,8 +39,13 @@ const SidebarItem = ({
   </button>
 );
 
-export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, userRole, onLogout }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, userRole, onLogout, onExport, onImport }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const triggerImport = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden font-sans selection:bg-indigo-500/20 selection:text-indigo-700">
@@ -87,6 +94,29 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
                 label="Analytics & AI" 
                 isActive={currentView === AppView.ANALYTICS} 
                 onClick={() => setView(AppView.ANALYTICS)} 
+              />
+              
+              {/* Data Management Divider */}
+              <div className="my-6 border-t border-slate-800/50"></div>
+              <div className="mb-3 pl-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                Data Management
+              </div>
+
+              <button onClick={onExport} className="group flex items-center w-full px-4 py-3 text-xs font-bold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl mb-2 transition-all">
+                 <Download className="w-4 h-4 mr-3" />
+                 Backup Data
+              </button>
+              
+              <button onClick={triggerImport} className="group flex items-center w-full px-4 py-3 text-xs font-bold text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-xl mb-2 transition-all">
+                 <Upload className="w-4 h-4 mr-3" />
+                 Restore Data
+              </button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={onImport} 
+                className="hidden" 
+                accept=".json" 
               />
             </>
           )}
@@ -159,6 +189,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
                     isActive={currentView === AppView.ANALYTICS} 
                     onClick={() => { setView(AppView.ANALYTICS); setIsMobileMenuOpen(false); }} 
                   />
+                  <div className="h-px bg-slate-800 my-4"></div>
+                  <button onClick={() => { onExport(); setIsMobileMenuOpen(false); }} className="w-full py-3 text-left text-sm font-bold text-emerald-400 flex items-center">
+                    <Download className="w-5 h-5 mr-3" /> Backup Data
+                  </button>
+                  <button onClick={() => { triggerImport(); setIsMobileMenuOpen(false); }} className="w-full py-3 text-left text-sm font-bold text-indigo-400 flex items-center">
+                    <Upload className="w-5 h-5 mr-3" /> Restore Data
+                  </button>
+                  <input type="file" ref={fileInputRef} onChange={onImport} className="hidden" accept=".json" />
                 </>
               )}
             </div>

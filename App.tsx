@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { DispatchEntryView } from './views/DispatchEntry';
 import { DashboardView } from './views/Dashboard';
@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('admin'); 
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
+  const [isDataLoaded, setIsDataLoaded] = useState(false); // Safety flag
   
   // Lazy initialization with MIGRATION logic
   const [dispatchData, setDispatchData] = useState<DispatchEntry[]>(() => {
@@ -52,6 +53,11 @@ const App: React.FC = () => {
     return [];
   });
 
+  // Mark data as loaded after mount to allow saving
+  useEffect(() => {
+    setIsDataLoaded(true);
+  }, []);
+
   // Auth Persistence
   useEffect(() => {
     const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -68,18 +74,20 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Save data whenever it changes
+  // Save data whenever it changes - STRICT SAFETY CHECK
   useEffect(() => {
+    // CRITICAL: Never save if we haven't finished loading. 
+    // This prevents overwriting existing data with [] during a race condition.
+    if (!isDataLoaded) return;
+
     try {
-      // Double check we aren't saving an empty array over existing data due to a bug
-      // (Only strict safety check, allowing empty if user actually deleted everything)
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dispatchData));
     } catch (e) {
       console.error("Failed to save data", e);
     }
-  }, [dispatchData]);
+  }, [dispatchData, isDataLoaded]);
 
-  // Real-time synchronization: Listen for changes in other tabs
+  // Real-time synchronization
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === LOCAL_STORAGE_KEY && event.newValue) {
@@ -96,7 +104,7 @@ const App: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Switch default view when role changes or login happens
+  // View switching
   useEffect(() => {
     if (isAuthenticated) {
       if (userRole === 'user') {
@@ -116,8 +124,9 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem(AUTH_STORAGE_KEY);
-    // NOTE: We deliberately DO NOT clear dispatch data here to ensure lifetime persistence
   };
+
+  // --- Data Management ---
 
   const handleAddEntry = (entry: Omit<DispatchEntry, 'id' | 'timestamp'>) => {
     const newEntry: DispatchEntry = {
@@ -150,6 +159,49 @@ const App: React.FC = () => {
       ));
   };
 
+  // --- Backup & Restore ---
+
+  const handleExportData = () => {
+    const dataStr = JSON.stringify(dispatchData, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const date = new Date().toISOString().split('T')[0];
+    link.href = url;
+    link.download = `dispatch_pro_backup_${date}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+            const migrated = migrateData(parsed);
+            if (window.confirm(`Found ${migrated.length} records. This will REPLACE current data. Continue?`)) {
+                setDispatchData(migrated);
+                alert("Data restored successfully!");
+            }
+        } else {
+            alert("Invalid backup file format.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to parse backup file.");
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    event.target.value = '';
+  };
+
   const renderView = () => {
     if (userRole === 'user') {
       return (
@@ -164,7 +216,6 @@ const App: React.FC = () => {
       );
     }
 
-    // Admin Views
     switch (currentView) {
       case AppView.DASHBOARD:
         return <DashboardView data={dispatchData} />;
@@ -185,6 +236,8 @@ const App: React.FC = () => {
       setView={setCurrentView} 
       userRole={userRole}
       onLogout={handleLogout}
+      onExport={handleExportData}
+      onImport={handleImportData}
     >
       {renderView()}
     </Layout>
