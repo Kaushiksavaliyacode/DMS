@@ -112,14 +112,14 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
     <div className="bg-white rounded-xl p-4 border-2 border-slate-900 shadow-[4px_4px_0px_rgba(0,0,0,1)] relative overflow-hidden group hover:-translate-y-0.5 transition-transform">
         <div className="relative z-10 flex items-center justify-between">
             <div>
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">{title}</h3>
+                <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-1">{title}</h3>
                 <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-slate-900 tracking-tight">{value}</span>
+                    <span className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight">{value}</span>
                     <span className="text-xs font-bold text-slate-500">{sub}</span>
                 </div>
             </div>
             <div className={`p-3 rounded-lg border-2 border-black ${bgClass}`}>
-                <Icon className={`w-5 h-5 ${colorClass} stroke-[3px]`} />
+                <Icon className={`w-6 h-6 ${colorClass} stroke-[3px]`} />
             </div>
         </div>
     </div>
@@ -128,7 +128,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-24 font-sans">
       
-      {/* KPI Section - Bold Style */}
+      {/* KPI Section */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard 
             title="Total Disp. Wt" 
@@ -234,7 +234,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                 </div>
             ) : (
                 <>
-                    {/* Desktop Table View - Bold Desi Style */}
+                    {/* Desktop Table View - High Visibility */}
                     <div className="hidden md:block w-full overflow-hidden">
                         <table className="w-full text-left border-collapse table-fixed">
                             <thead className="bg-slate-800 text-white border-b-2 border-slate-900 sticky top-0 z-10 shadow-md">
@@ -253,7 +253,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                                         <th 
                                             key={col.key}
                                             onClick={() => handleSort(col.key as SortKey)}
-                                            className={`py-4 px-2 text-xs font-black uppercase tracking-wider cursor-pointer hover:bg-slate-700 transition-colors select-none truncate ${col.width} ${col.className || ''} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}`}
+                                            className={`py-4 px-2 text-sm font-black uppercase tracking-wider cursor-pointer hover:bg-slate-700 transition-colors select-none truncate ${col.width} ${col.className || ''} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}`}
                                         >
                                             <div className={`flex items-center gap-1 ${col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : 'justify-start'}`}>
                                                 {col.label}
@@ -270,44 +270,44 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                                     
                                     return (
                                         <tr key={entry.id} className={`hover:bg-blue-50 transition-colors group ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                                            <td className="py-4 px-2 pl-4 align-middle text-xs font-bold text-slate-500 whitespace-nowrap font-mono">
+                                            <td className="py-4 px-2 pl-4 align-middle text-sm font-bold text-slate-600 whitespace-nowrap font-mono">
                                                 {entry.date}
                                             </td>
                                             <td className="py-4 px-2 align-middle">
-                                                <div className="font-black text-slate-800 text-sm truncate uppercase tracking-tight" title={entry.partyName}>
+                                                <div className="font-black text-slate-900 text-base truncate uppercase tracking-tight" title={entry.partyName}>
                                                     {entry.partyName}
                                                 </div>
                                             </td>
                                             <td className="py-4 px-2 align-middle">
-                                                <span className="inline-block px-2 py-1 rounded-md text-xs font-black bg-slate-200 text-slate-800 border border-slate-300">
+                                                <span className="inline-block px-2 py-1 rounded-md text-sm font-black bg-slate-200 text-slate-800 border border-slate-300">
                                                     {entry.size}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-2 text-center align-middle">
-                                                <span className="font-black text-slate-700 text-sm">
+                                                <span className="font-black text-slate-800 text-base">
                                                     {entry.bundle ? `${entry.bundle} 📦` : '-'}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-2 text-center align-middle">
                                                 {isMM ? (
-                                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Rolls</span>
+                                                    <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Rolls</span>
                                                 ) : (
-                                                    <span className="font-black text-slate-700 text-sm">{entry.pcs || '-'}</span>
+                                                    <span className="font-black text-slate-800 text-base">{entry.pcs || '-'}</span>
                                                 )}
                                             </td>
                                             <td className="py-4 px-2 text-right align-middle">
-                                                <span className="font-black text-indigo-700 text-sm block">
+                                                <span className="font-black text-indigo-800 text-base block">
                                                     {entry.weight > 0 ? `${entry.weight.toLocaleString()} kg` : '-'}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-2 text-right align-middle">
-                                                <span className="font-bold text-slate-500 text-sm block">
+                                                <span className="font-bold text-slate-600 text-base block">
                                                     {entry.productionWeight > 0 ? `${entry.productionWeight.toLocaleString()} kg` : '-'}
                                                 </span>
                                             </td>
                                             <td className="py-4 px-2 text-right align-middle">
                                                 {wastage !== 0 ? (
-                                                    <span className={`font-black text-xs px-1.5 py-0.5 rounded ${wastage > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                    <span className={`font-black text-sm px-1.5 py-0.5 rounded ${wastage > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                                         {wastage > 0 ? '+' : ''}{wastage.toFixed(1)}
                                                     </span>
                                                 ) : <span className="text-slate-300">-</span>}
@@ -322,7 +322,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                         </table>
                     </div>
 
-                    {/* Mobile Card View - Bold Desi Style */}
+                    {/* Mobile Card View - High Visibility */}
                     <div className="md:hidden grid grid-cols-1 gap-3 p-3 bg-slate-100">
                         {sortedData.map((entry) => {
                             const isExpanded = mobileExpandedId === entry.id;
@@ -334,11 +334,11 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                                     {/* Header: Date, Party & Status */}
                                     <div className="flex justify-between items-start mb-3 gap-3">
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500 mb-1">
+                                            <div className="flex items-center gap-2 text-xs font-bold text-slate-500 mb-1">
                                                 <Calendar className="w-3.5 h-3.5" />
                                                 {entry.date}
                                             </div>
-                                            <h3 className="font-black text-slate-900 text-base uppercase leading-tight truncate">{entry.partyName}</h3>
+                                            <h3 className="font-black text-slate-900 text-lg uppercase leading-tight truncate">{entry.partyName}</h3>
                                         </div>
                                         <StatusBadge status={entry.status} />
                                     </div>
@@ -347,20 +347,20 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                                     <div className="grid grid-cols-3 gap-2 text-xs mb-3">
                                         <div className="bg-slate-50 p-2 rounded border border-slate-200">
                                             <span className="text-[10px] text-slate-400 uppercase font-black block mb-0.5">Size</span>
-                                            <span className="font-black text-slate-900 text-sm">{entry.size}</span>
+                                            <span className="font-black text-slate-900 text-base">{entry.size}</span>
                                         </div>
                                         <div className="bg-indigo-50 p-2 rounded border border-indigo-100 text-center">
                                             <span className="text-[10px] text-indigo-400 uppercase font-black block mb-0.5">Disp. Wt</span>
-                                            <span className="font-black text-indigo-800 text-sm">{entry.weight} kg</span>
+                                            <span className="font-black text-indigo-800 text-base">{entry.weight} kg</span>
                                         </div>
                                         <div className="bg-slate-50 p-2 rounded border border-slate-200 text-right">
                                             <span className="text-[10px] text-slate-400 uppercase font-black block mb-0.5">Prod. Wt</span>
-                                            <span className="font-bold text-slate-600 text-sm">{entry.productionWeight || '-'}</span>
+                                            <span className="font-bold text-slate-600 text-base">{entry.productionWeight ? `${entry.productionWeight} kg` : '-'}</span>
                                         </div>
                                     </div>
 
                                     {/* Secondary Stats Row */}
-                                    <div className="flex justify-between items-center text-xs pt-2 border-t-2 border-slate-100 border-dashed">
+                                    <div className="flex justify-between items-center text-sm pt-2 border-t-2 border-slate-100 border-dashed">
                                          <div className="flex gap-2">
                                             <span className="font-bold bg-slate-200 px-2 py-1 rounded text-slate-800 border border-slate-300">
                                                 {entry.bundle || 0} 📦

@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'reliance-pms-v6';
+const CACHE_NAME = 'reliance-pms-v7';
 const urlsToCache = [
   '/',
   '/index.html',
