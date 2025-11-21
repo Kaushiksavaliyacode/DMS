@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'rdms-v18';
+const CACHE_NAME = 'rdms-v20';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -45,3 +45,4 @@ self.addEventListener('activate', event => {
   );
   return self.clients.claim(); // Take control of all pages immediately
 });
+    
