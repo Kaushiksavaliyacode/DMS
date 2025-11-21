@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { DispatchEntry, DispatchStatus, MOCK_PARTIES } from '../types';
-import { Plus, RotateCcw, FileText, CheckCircle2, Pencil, Trash2, Layers, Scale, AlertCircle, CheckSquare, Square, X, Calendar, Ruler, User, Package, Clock, Activity, CheckCircle } from 'lucide-react';
+import { Plus, RotateCcw, CheckCircle2, Pencil, Trash2, Layers, Scale, AlertCircle, CheckSquare, Square, X, Calendar, Ruler, User, Package, Clock, Activity, CheckCircle } from 'lucide-react';
 
 interface DispatchEntryProps {
   entries: DispatchEntry[];
