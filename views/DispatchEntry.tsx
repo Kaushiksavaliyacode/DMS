@@ -148,325 +148,293 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-32 pt-4 font-inter">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-2xl shadow-lg shadow-indigo-200">
-            <FileText className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">{editingId ? 'Edit Job' : 'Create Job'}</h1>
-            <p className="text-sm text-slate-500 font-medium">Manage your daily production dispatch</p>
-          </div>
+    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-32 pt-2 font-inter">
+      
+      {/* Header with Context */}
+      <div className="flex items-center justify-between px-2">
+        <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+               {editingId ? 'Edit Dispatch' : 'New Dispatch'}
+               <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-extrabold uppercase tracking-wide border border-indigo-100">
+                 Entry Form
+               </span>
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">Enter production details for today's dispatch</p>
         </div>
       </div>
 
-      {/* Entry Form Card - Soft UI */}
-      <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden relative">
+      {/* Main Layout: Form & List */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        <div className="p-6 md:p-8">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            
-            {/* Section 1: Details */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                  {/* Party Name */}
-                  <div className="md:col-span-5 space-y-1.5">
-                     <label className="text-xs font-bold text-slate-500 uppercase ml-1">Party Name</label>
-                     <div className="relative group">
-                        <User className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <input
-                          list="party-options"
-                          name="partyName"
-                          value={formData.partyName}
-                          onChange={handleChange}
-                          placeholder="Select Client..."
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-sm font-semibold text-slate-800 transition-all outline-none"
-                          required
-                        />
-                     </div>
-                     <datalist id="party-options">
-                        {MOCK_PARTIES.map(p => <option key={p} value={p} />)}
-                     </datalist>
-                  </div>
+        {/* Left: Input Form */}
+        <div className="lg:col-span-7 space-y-6">
+            <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.06)] border border-slate-100">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    
+                    {/* Primary Info */}
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Party Name</label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                    <input
+                                        list="party-options"
+                                        name="partyName"
+                                        value={formData.partyName}
+                                        onChange={handleChange}
+                                        placeholder="Select Client..."
+                                        className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border-0 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20 placeholder:text-slate-300 transition-all"
+                                        required
+                                    />
+                                    <datalist id="party-options">
+                                        {MOCK_PARTIES.map(p => <option key={p} value={p} />)}
+                                    </datalist>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Date</label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="date"
+                                        name="date"
+                                        value={formData.date}
+                                        onChange={handleChange}
+                                        className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border-0 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-                  {/* Size */}
-                  <div className="md:col-span-4 space-y-1.5">
-                     <label className="text-xs font-bold text-slate-500 uppercase ml-1">Size</label>
-                     <div className="relative group">
-                        <Ruler className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <input
-                          type="text"
-                          name="size"
-                          value={formData.size}
-                          onChange={handleChange}
-                          placeholder="e.g. 12mm"
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-sm font-semibold text-slate-800 transition-all outline-none"
-                          required
-                        />
-                     </div>
-                  </div>
-
-                  {/* Date */}
-                  <div className="md:col-span-3 space-y-1.5">
-                     <label className="text-xs font-bold text-slate-500 uppercase ml-1">Date</label>
-                     <div className="relative group">
-                       <Calendar className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                       <input
-                        type="date"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleChange}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-sm font-semibold text-slate-800 transition-all outline-none"
-                        required
-                      />
-                     </div>
-                  </div>
-            </div>
-
-            {/* Section 2: Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                  {/* Bundles */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Rolls / Bundles</label>
-                    <div className="relative group">
-                        <Package className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <input
-                          type="number"
-                          name="bundle"
-                          value={formData.bundle}
-                          onChange={handleChange}
-                          placeholder="0"
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-sm font-semibold text-slate-800 transition-all outline-none"
-                          min="0"
-                          required={formData.status === 'completed'}
-                        />
-                    </div>
-                  </div>
-
-                   {/* Pcs (Conditional) */}
-                  {!isMMSize && (
-                    <div className="space-y-1.5 animate-in fade-in zoom-in duration-300">
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">Total Pcs</label>
-                        <div className="relative group">
-                            <Layers className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                            <input
-                            type="number"
-                            name="pcs"
-                            value={formData.pcs}
-                            onChange={handleChange}
-                            placeholder="0"
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-sm font-semibold text-slate-800 transition-all outline-none"
-                            min="0"
-                            required={formData.status === 'completed'}
-                            />
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Size & Dimensions</label>
+                            <div className="relative">
+                                <Ruler className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    name="size"
+                                    value={formData.size}
+                                    onChange={handleChange}
+                                    placeholder="e.g. 12mm or 12x12"
+                                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border-0 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20 placeholder:text-slate-300 transition-all"
+                                    required
+                                />
+                            </div>
                         </div>
                     </div>
-                  )}
 
-                  {/* Dispatch Weight */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Dispatch Wt (kg)</label>
-                    <div className="relative group">
-                        <Scale className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <input
-                          type="number"
-                          name="weight"
-                          step="0.01"
-                          value={formData.weight}
-                          onChange={handleChange}
-                          placeholder="0.00"
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-sm font-semibold text-slate-800 transition-all outline-none"
-                          min="0"
-                          required={formData.status === 'completed'}
-                        />
+                    <div className="h-px bg-slate-50"></div>
+
+                    {/* Metrics */}
+                    <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rolls / Bundles</label>
+                            <div className="relative">
+                                <Package className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="number"
+                                    name="bundle"
+                                    value={formData.bundle}
+                                    onChange={handleChange}
+                                    placeholder="0"
+                                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border-0 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                    min="0"
+                                    required={formData.status === 'completed'}
+                                />
+                            </div>
+                        </div>
+                        
+                         {!isMMSize && (
+                            <div className="space-y-1.5 animate-in fade-in zoom-in">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Pcs</label>
+                                <div className="relative">
+                                    <Layers className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="number"
+                                        name="pcs"
+                                        value={formData.pcs}
+                                        onChange={handleChange}
+                                        placeholder="0"
+                                        className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border-0 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        min="0"
+                                        required={formData.status === 'completed'}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                         <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Dispatch Wt (kg)</label>
+                            <div className="relative">
+                                <Scale className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="number"
+                                    name="weight"
+                                    step="0.01"
+                                    value={formData.weight}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
+                                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border-0 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                    min="0"
+                                    required={formData.status === 'completed'}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex justify-between">
+                                <span>Prod. Wt (kg)</span>
+                                <span className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-400">OPTIONAL</span>
+                            </label>
+                            <div className="relative">
+                                <Scale className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                <input
+                                    type="number"
+                                    name="productionWeight"
+                                    step="0.01"
+                                    value={formData.productionWeight}
+                                    onChange={handleChange}
+                                    placeholder="0.00"
+                                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border-0 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                    min="0"
+                                />
+                            </div>
+                        </div>
                     </div>
-                  </div>
 
-                  {/* Production Weight */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase flex justify-between ml-1">
-                        <span>Prod. Wt (kg)</span>
-                        <span className="text-slate-300 text-[10px]">OPTIONAL</span>
-                    </label>
-                    <div className="relative group">
-                        <Scale className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                        <input
-                          type="number"
-                          name="productionWeight"
-                          step="0.01"
-                          value={formData.productionWeight}
-                          onChange={handleChange}
-                          placeholder="0.00"
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-sm font-semibold text-slate-800 transition-all outline-none"
-                          min="0"
-                        />
+                    {/* Status */}
+                    <div className="bg-slate-50 p-1 rounded-xl flex">
+                        {['pending', 'running', 'completed'].map((s) => (
+                            <button
+                                key={s}
+                                type="button"
+                                onClick={() => setFormData({...formData, status: s as DispatchStatus})}
+                                className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${
+                                    formData.status === s 
+                                    ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' 
+                                    : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                            >
+                                {s}
+                            </button>
+                        ))}
                     </div>
-                  </div>
-            </div>
 
-            {/* Status & Actions */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
-                {/* Status Selector */}
-                <div className="flex bg-slate-50 p-1.5 rounded-xl border border-slate-200 w-full md:w-auto">
-                    {['pending', 'running', 'completed'].map((s) => (
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-2">
                         <button
-                            key={s}
                             type="button"
-                            onClick={() => setFormData({...formData, status: s as DispatchStatus})}
-                            className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${
-                                formData.status === s 
-                                ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' 
-                                : 'text-slate-400 hover:text-slate-600'
+                            onClick={resetForm}
+                            className="px-4 py-3 bg-slate-50 text-slate-500 rounded-xl font-bold hover:bg-slate-100 transition-colors"
+                        >
+                            <RotateCcw className="w-5 h-5" />
+                        </button>
+                        <button
+                            type="submit"
+                            className={`flex-1 flex items-center justify-center gap-2 text-white font-bold py-3 rounded-xl shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0 ${
+                                editingId 
+                                ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200' 
+                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
                             }`}
                         >
-                            {s}
+                            {editingId ? <Pencil className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
+                            {editingId ? 'Update Job' : 'Create Job'}
                         </button>
-                    ))}
-                </div>
+                    </div>
 
-                {/* Buttons */}
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                     <button
-                        type="button"
-                        onClick={resetForm}
-                        className="px-5 py-3.5 border border-slate-200 text-slate-500 font-bold rounded-xl hover:bg-slate-50 transition-colors"
-                    >
-                        <RotateCcw className="w-5 h-5" />
-                    </button>
-                    
-                    <button
-                        type="submit"
-                        className={`flex-1 md:flex-none flex items-center justify-center text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 ${
-                        editingId 
-                            ? 'bg-gradient-to-r from-amber-500 to-orange-600 shadow-amber-500/30' 
-                            : 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-indigo-500/30'
-                        }`}
-                    >
-                        {editingId ? <Pencil className="w-4 h-4 mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-                        {editingId ? 'Update Job' : 'Create Job'}
-                    </button>
-                </div>
-            </div>
-
-            {notification && (
-              <div className={`p-4 rounded-xl flex items-center animate-in slide-in-from-top-2 duration-300 ${
-                notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'
-              }`}>
-                {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5 mr-3" /> : <AlertCircle className="w-5 h-5 mr-3" />}
-                <span className="font-bold text-sm">{notification.message}</span>
-              </div>
-            )}
-          </form>
-        </div>
-      </div>
-
-      {/* Job List Section - Card Style List */}
-      <div className="space-y-4 pt-4">
-        <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-3">
-                <h2 className="text-lg font-bold text-slate-800">Recent Activity</h2>
-                <span className="bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full text-xs font-bold">{entries.length} Jobs</span>
-            </div>
-            
-             {entries.length > 0 && (
-                <button 
-                    onClick={toggleSelectAll}
-                    className="flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors"
-                >
-                    {selectedIds.size === entries.length && entries.length > 0 ? (
-                        <CheckSquare className="w-4 h-4 mr-1.5 text-indigo-600" />
-                    ) : (
-                        <Square className="w-4 h-4 mr-1.5" />
+                     {notification && (
+                        <div className={`p-3 rounded-lg flex items-center gap-2 text-sm font-bold ${
+                            notification.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                        }`}>
+                            {notification.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                            {notification.message}
+                        </div>
                     )}
-                    Select All
-                </button>
-            )}
+                </form>
+            </div>
         </div>
-        
-        <div className="flex flex-col gap-3">
-          {sortedEntries.length === 0 ? (
-             <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200">
-               <Layers className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-               <p className="font-medium text-slate-400 text-sm">No jobs today</p>
+
+        {/* Right: Recent List */}
+        <div className="lg:col-span-5 flex flex-col h-full">
+             <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-slate-800">Recent Activity</h2>
+                {entries.length > 0 && (
+                     <button onClick={toggleSelectAll} className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
+                         {selectedIds.size === entries.length ? <CheckSquare className="w-3 h-3"/> : <Square className="w-3 h-3"/>}
+                         Select All
+                     </button>
+                )}
              </div>
-          ) : (
-            sortedEntries.map((entry) => {
-              const isSelected = selectedIds.has(entry.id);
-              return (
-              <div 
-                key={entry.id} 
-                className={`bg-white rounded-2xl p-4 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border transition-all duration-200 group relative ${
-                    isSelected ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/10' : 'border-slate-100 hover:border-indigo-200'
-                }`}
-              >
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                      {/* Select Box */}
-                      <button onClick={() => toggleSelection(entry.id)} className="text-slate-300 hover:text-indigo-600 pt-1 sm:pt-0">
-                            {isSelected ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5" />}
-                      </button>
-
-                      {/* Content */}
-                      <div className="flex-1 w-full grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-                          <div className="col-span-2 md:col-span-1">
-                              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-0.5">
-                                  <Calendar className="w-3 h-3" /> {entry.date}
-                              </div>
-                              <h3 className="text-sm font-bold text-slate-900 truncate">{entry.partyName}</h3>
-                          </div>
-
-                          <div>
-                              <span className="text-[10px] text-slate-400 font-bold uppercase block">Size</span>
-                              <span className="text-sm font-bold text-slate-700">{entry.size}</span>
-                          </div>
-
-                          <div>
-                              <span className="text-[10px] text-slate-400 font-bold uppercase block">Details</span>
-                              <span className="text-sm font-bold text-slate-700">{entry.bundle || 0} Rolls • {entry.weight} kg</span>
-                          </div>
-
-                          <div className="flex justify-between md:justify-end items-center col-span-2 md:col-span-1">
-                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
-                                   entry.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 
-                                   entry.status === 'running' ? 'bg-blue-50 text-blue-700 border-blue-100' : 
-                                   'bg-amber-50 text-amber-700 border-amber-100'
-                               }`}>
-                                    {entry.status}
-                               </span>
-                               
-                               <div className="flex gap-1 ml-4 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => handleEditClick(entry)} className="p-1.5 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 rounded">
-                                        <Pencil className="w-4 h-4" />
-                                    </button>
-                                    <button onClick={() => onDeleteEntry(entry.id)} className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded">
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                               </div>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-            )})
-          )}
+             
+             <div className="flex-1 overflow-y-auto max-h-[600px] space-y-3 pr-1 no-scrollbar">
+                 {sortedEntries.length === 0 ? (
+                     <div className="h-40 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                         <Layers className="w-8 h-8 mb-2 opacity-50" />
+                         <span className="text-sm">No jobs yet</span>
+                     </div>
+                 ) : (
+                     sortedEntries.map(entry => {
+                         const isSelected = selectedIds.has(entry.id);
+                         return (
+                             <div key={entry.id} className={`bg-white p-4 rounded-xl border transition-all group ${isSelected ? 'border-indigo-400 bg-indigo-50/20' : 'border-slate-100 hover:border-indigo-200 shadow-sm'}`}>
+                                 <div className="flex justify-between items-start mb-2">
+                                     <div className="flex items-center gap-3">
+                                         <button onClick={() => toggleSelection(entry.id)} className="text-slate-300 hover:text-indigo-600">
+                                             {isSelected ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5" />}
+                                         </button>
+                                         <div>
+                                             <h3 className="text-sm font-bold text-slate-800 leading-tight">{entry.partyName}</h3>
+                                             <span className="text-[10px] font-bold text-slate-400 uppercase">{entry.date} • {entry.size}</span>
+                                         </div>
+                                     </div>
+                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                         entry.status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
+                                         entry.status === 'running' ? 'bg-blue-50 text-blue-600' :
+                                         'bg-amber-50 text-amber-600'
+                                     }`}>
+                                         {entry.status}
+                                     </span>
+                                 </div>
+                                 
+                                 <div className="flex items-center justify-between pl-8">
+                                     <div className="flex gap-3 text-xs font-medium text-slate-600">
+                                         <span className="bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">{entry.bundle} 📦</span>
+                                         <span className="bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">{entry.weight} kg</span>
+                                     </div>
+                                     
+                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                         <button onClick={() => handleEditClick(entry)} className="p-1 text-slate-400 hover:text-indigo-600"><Pencil className="w-3.5 h-3.5"/></button>
+                                         <button onClick={() => onDeleteEntry(entry.id)} className="p-1 text-slate-400 hover:text-red-600"><Trash2 className="w-3.5 h-3.5"/></button>
+                                     </div>
+                                 </div>
+                             </div>
+                         )
+                     })
+                 )}
+             </div>
         </div>
       </div>
 
-      {/* Bulk Action Bar */}
+      {/* Bulk Action Bar - Floating */}
       {selectedIds.size > 0 && (
-          <div className="fixed bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[500px] z-50 animate-in slide-in-from-bottom-10 duration-300">
-              <div className="bg-slate-900 text-white rounded-2xl p-3 shadow-2xl flex items-center justify-between gap-3 px-5 border border-slate-800">
-                  <span className="text-xs font-bold text-slate-300">{selectedIds.size} Selected</span>
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10">
+              <div className="bg-slate-900 text-white rounded-full px-6 py-3 shadow-2xl flex items-center gap-4 border border-slate-800">
+                  <span className="text-xs font-bold whitespace-nowrap">{selectedIds.size} Selected</span>
+                  <div className="h-4 w-px bg-slate-700"></div>
                   <div className="flex items-center gap-2">
-                       <button onClick={() => executeBulkStatus('pending')} className="p-2 rounded-lg hover:bg-slate-800 text-amber-400 transition-colors"><Clock className="w-4 h-4"/></button>
-                       <button onClick={() => executeBulkStatus('running')} className="p-2 rounded-lg hover:bg-slate-800 text-blue-400 transition-colors"><Activity className="w-4 h-4"/></button>
-                       <button onClick={() => executeBulkStatus('completed')} className="p-2 rounded-lg hover:bg-slate-800 text-emerald-400 transition-colors"><CheckCircle className="w-4 h-4"/></button>
-                       <div className="w-px h-4 bg-slate-700 mx-1"></div>
-                       <button onClick={executeBulkDelete} className="p-2 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors"><Trash2 className="w-4 h-4"/></button>
-                       <button onClick={() => setSelectedIds(new Set())} className="ml-2 p-2 text-slate-500 hover:text-white"><X className="w-4 h-4"/></button>
+                       <button onClick={() => executeBulkStatus('pending')} title="Mark Pending" className="hover:text-amber-400 transition-colors"><Clock className="w-4 h-4"/></button>
+                       <button onClick={() => executeBulkStatus('running')} title="Mark Running" className="hover:text-blue-400 transition-colors"><Activity className="w-4 h-4"/></button>
+                       <button onClick={() => executeBulkStatus('completed')} title="Mark Complete" className="hover:text-emerald-400 transition-colors"><CheckCircle className="w-4 h-4"/></button>
+                       <div className="h-4 w-px bg-slate-700 mx-1"></div>
+                       <button onClick={executeBulkDelete} title="Delete" className="hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4"/></button>
                   </div>
+                  <button onClick={() => setSelectedIds(new Set())} className="ml-2 text-slate-500 hover:text-white"><X className="w-4 h-4"/></button>
               </div>
           </div>
       )}
+
     </div>
   );
 };

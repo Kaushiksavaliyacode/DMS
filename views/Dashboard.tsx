@@ -2,8 +2,8 @@
 import React, { useMemo, useState } from 'react';
 import { DispatchEntry, DispatchStatus } from '../types';
 import { 
-  Search, Filter, ArrowUpDown, 
-  ArrowUp, ArrowDown, Package, Scale, TrendingUp, XCircle, Layers, Calendar, MoreHorizontal
+  Search, ArrowUpDown, ArrowUp, ArrowDown, 
+  Package, Scale, TrendingUp, XCircle, Layers
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -109,9 +109,9 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
 
   // Refined KPI Card looking like the reference "Balance" cards
   const KPICard = ({ title, value, sub, icon: Icon, trend }: any) => (
-    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col justify-between h-full">
-        <div className="flex items-start justify-between mb-2">
-            <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600">
+    <div className="bg-white rounded-2xl p-5 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex flex-col justify-between h-full transition-all hover:shadow-md">
+        <div className="flex items-start justify-between mb-3">
+            <div className="p-3 bg-indigo-50/80 rounded-xl text-indigo-600">
                 <Icon className="w-5 h-5" />
             </div>
              {trend && (
@@ -163,23 +163,23 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
       </div>
 
       {/* Main Content: Table & Filters - Fit Screen */}
-      <div className="flex-1 bg-white rounded-3xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col overflow-hidden">
         
         {/* Toolbar */}
         <div className="px-6 py-4 border-b border-slate-50 flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-white shrink-0">
             <div className="flex items-center gap-3">
-                <div className="bg-indigo-600 p-2 rounded-lg text-white">
+                <div className="bg-indigo-600 p-2 rounded-lg text-white shadow-sm shadow-indigo-200">
                     <Search className="w-4 h-4" />
                 </div>
-                <h2 className="text-base font-bold text-slate-800">Dispatch Records</h2>
-                <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full text-xs font-bold">
-                    {filteredData.length}
-                </span>
+                <div>
+                    <h2 className="text-base font-bold text-slate-800">Dispatch Records</h2>
+                    <p className="text-xs text-slate-400 font-medium">{filteredData.length} entries found</p>
+                </div>
             </div>
             
             <div className="flex flex-wrap gap-2 w-full xl:w-auto">
                 <select 
-                    className="px-3 py-2 bg-slate-50 border-0 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer transition-all"
+                    className="px-4 py-2 bg-slate-50 border-0 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer transition-all min-w-[140px]"
                     value={filters.party}
                     onChange={(e) => setFilters({...filters, party: e.target.value})}
                 >
@@ -188,7 +188,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                 </select>
 
                 <select 
-                    className="px-3 py-2 bg-slate-50 border-0 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer transition-all"
+                    className="px-4 py-2 bg-slate-50 border-0 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer transition-all min-w-[120px]"
                     value={filters.size}
                     onChange={(e) => setFilters({...filters, size: e.target.value})}
                 >
@@ -196,17 +196,17 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                     {uniqueSizes.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
 
-                <div className="flex items-center bg-slate-50 rounded-xl px-3 gap-2">
+                <div className="flex items-center bg-slate-50 rounded-xl px-4 gap-2 border border-transparent focus-within:border-indigo-100 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
                      <input 
                         type="date"
-                        className="bg-transparent border-0 text-sm font-semibold text-slate-600 focus:ring-0 outline-none w-28 p-0"
+                        className="bg-transparent border-0 text-sm font-semibold text-slate-600 focus:ring-0 outline-none w-32 p-0 py-2"
                         value={filters.startDate}
                         onChange={(e) => setFilters({...filters, startDate: e.target.value})}
                      />
                      <span className="text-slate-300 font-light">|</span>
                      <input 
                         type="date"
-                        className="bg-transparent border-0 text-sm font-semibold text-slate-600 focus:ring-0 outline-none w-28 p-0"
+                        className="bg-transparent border-0 text-sm font-semibold text-slate-600 focus:ring-0 outline-none w-32 p-0 py-2"
                         value={filters.endDate}
                         onChange={(e) => setFilters({...filters, endDate: e.target.value})}
                      />
@@ -225,7 +225,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
         </div>
 
         {/* Data Table - Scrollable Body */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto no-scrollbar">
             {sortedData.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400">
                     <div className="bg-slate-50 p-6 rounded-full mb-4">
@@ -235,7 +235,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                 </div>
             ) : (
                 <table className="w-full text-left border-collapse">
-                    <thead className="bg-white sticky top-0 z-10 shadow-sm shadow-slate-100">
+                    <thead className="bg-white sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                         <tr>
                             {[
                                 { label: 'Date', key: 'date', width: 'w-[12%]', className: 'pl-6' },
@@ -250,7 +250,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                                 <th 
                                     key={col.key}
                                     onClick={() => handleSort(col.key as SortKey)}
-                                    className={`py-4 px-4 text-xs font-bold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-indigo-600 transition-colors select-none bg-white ${col.width} ${col.className || ''} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}`}
+                                    className={`py-4 px-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-indigo-600 transition-colors select-none bg-white border-b border-slate-50 ${col.width} ${col.className || ''} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}`}
                                 >
                                     <div className={`flex items-center gap-1 ${col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : 'justify-start'}`}>
                                         {col.label}
@@ -260,47 +260,47 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-50/50">
                         {sortedData.map((entry) => {
                             const isMM = entry.size.toLowerCase().includes('mm');
                             return (
-                                <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="py-4 px-4 pl-6 align-middle text-sm font-semibold text-slate-500 font-mono whitespace-nowrap">
+                                <tr key={entry.id} className="hover:bg-slate-50 transition-colors group">
+                                    <td className="py-3.5 px-4 pl-6 align-middle text-sm font-semibold text-slate-500 font-mono whitespace-nowrap">
                                         {entry.date}
                                     </td>
-                                    <td className="py-4 px-4 align-middle">
-                                        <div className="font-bold text-slate-900 text-sm truncate" title={entry.partyName}>
+                                    <td className="py-3.5 px-4 align-middle">
+                                        <div className="font-bold text-slate-700 text-sm truncate" title={entry.partyName}>
                                             {entry.partyName}
                                         </div>
                                     </td>
-                                    <td className="py-4 px-4 align-middle">
-                                        <span className="inline-block px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 text-xs font-bold border border-slate-100">
+                                    <td className="py-3.5 px-4 align-middle">
+                                        <span className="inline-block px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-xs font-bold">
                                             {entry.size}
                                         </span>
                                     </td>
-                                    <td className="py-4 px-4 text-center align-middle">
+                                    <td className="py-3.5 px-4 text-center align-middle">
                                         <span className="font-bold text-slate-700 text-sm">
                                             {entry.bundle ? `${entry.bundle} 📦` : '-'}
                                         </span>
                                     </td>
-                                    <td className="py-4 px-4 text-center align-middle">
+                                    <td className="py-3.5 px-4 text-center align-middle">
                                         {isMM ? (
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rolls</span>
+                                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded">Rolls</span>
                                         ) : (
                                             <span className="font-bold text-slate-700 text-sm">{entry.pcs || '-'}</span>
                                         )}
                                     </td>
-                                    <td className="py-4 px-4 text-right align-middle">
+                                    <td className="py-3.5 px-4 text-right align-middle">
                                         <span className="font-bold text-slate-900 text-sm block tabular-nums">
                                             {entry.weight > 0 ? `${entry.weight.toLocaleString()} kg` : '-'}
                                         </span>
                                     </td>
-                                    <td className="py-4 px-4 text-right align-middle">
+                                    <td className="py-3.5 px-4 text-right align-middle">
                                         <span className="font-medium text-slate-400 text-sm block tabular-nums">
                                             {entry.productionWeight > 0 ? `${entry.productionWeight.toLocaleString()} kg` : '-'}
                                         </span>
                                     </td>
-                                    <td className="py-4 px-4 pr-6 text-center align-middle">
+                                    <td className="py-3.5 px-4 pr-6 text-center align-middle">
                                         <StatusBadge status={entry.status} />
                                     </td>
                                 </tr>
