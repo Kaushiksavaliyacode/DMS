@@ -6,7 +6,7 @@ import {
   Package, Scale, TrendingUp, Layers, Calendar, Filter, XCircle
 } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+  Tooltip, ResponsiveContainer, 
   AreaChart, Area 
 } from 'recharts';
 
@@ -359,4 +359,3 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
     </div>
   );
 };
-    

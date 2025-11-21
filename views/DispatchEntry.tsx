@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { DispatchEntry, DispatchStatus, MOCK_PARTIES } from '../types';
-import { Plus, RotateCcw, CheckCircle2, Trash2, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Package, Scale, Layers, ArrowLeft, Send, Ruler, User } from 'lucide-react';
+import { Plus, RotateCcw, CheckCircle2, Trash2, ChevronLeft, ChevronRight, Calendar as CalendarIcon, ArrowLeft, Send, Ruler, User } from 'lucide-react';
 
 interface DispatchEntryProps {
   entries: DispatchEntry[];
@@ -21,7 +21,7 @@ const getFirstDayOfMonth = (year: number, month: number) => {
 };
 
 export const DispatchEntryView: React.FC<DispatchEntryProps> = ({ 
-    entries, onAddEntry, onUpdateEntry, onDeleteEntry 
+    entries, onAddEntry, onDeleteEntry 
 }) => {
   // --- Calendar State ---
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -345,4 +345,3 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
     </div>
   );
 };
-    
