@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Shield, User, Lock, ArrowRight, Box } from 'lucide-react';
 import { UserRole } from '../types';
@@ -89,8 +88,8 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-slate-900/20 rotate-3 hover:rotate-0 transition-transform duration-500">
               <Box className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 text-center tracking-tight">Kaushik Savaliya</h1>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Production System</p>
+            <h1 className="text-2xl font-extrabold text-slate-900 text-center tracking-tight">RDMS</h1>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">Reliance Dispatch Management</p>
           </div>
 
           {/* Role Selector */}
@@ -156,8 +155,8 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
           </form>
 
           <div className="mt-8 text-center">
-             <p className="text-xs text-slate-400 font-medium">
-               v2.1.0 • Kaushik Savaliya
+             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+               Secure Production Management
              </p>
           </div>
 

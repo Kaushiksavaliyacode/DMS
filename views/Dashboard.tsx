@@ -1,9 +1,8 @@
-
 import React, { useMemo, useState } from 'react';
 import { DispatchEntry, DispatchStatus } from '../types';
 import { 
   Search, Filter, ArrowUpDown, 
-  ArrowUp, ArrowDown, Package, Scale, TrendingUp, XCircle, Layers, Calendar, AlertTriangle, MoreHorizontal
+  ArrowUp, ArrowDown, Package, Scale, TrendingUp, XCircle, Layers, Calendar, AlertTriangle
 } from 'lucide-react';
 
 interface DashboardProps {

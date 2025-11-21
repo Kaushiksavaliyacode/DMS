@@ -1,5 +1,4 @@
-
-const CACHE_NAME = 'reliance-pms-v8';
+const CACHE_NAME = 'rdms-v9';
 const urlsToCache = [
   '/',
   '/index.html',
