@@ -1,8 +1,9 @@
+
 import React, { useMemo, useState } from 'react';
 import { DispatchEntry, DispatchStatus } from '../types';
 import { 
   Search, ArrowUpDown, ArrowUp, ArrowDown, 
-  Package, Scale, TrendingUp, XCircle, Layers
+  Package, Scale, TrendingUp, XCircle, Layers, CheckCircle2, Clock, Activity, Calendar
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -11,6 +12,7 @@ interface DashboardProps {
 
 type SortKey = keyof DispatchEntry | 'wastage';
 type SortDirection = 'asc' | 'desc';
+type TabView = 'all' | 'today' | 'running' | 'pending' | 'completed';
 
 interface FilterState {
   party: string;
@@ -20,6 +22,7 @@ interface FilterState {
 }
 
 export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
+  const [currentTab, setCurrentTab] = useState<TabView>('today');
   const [filters, setFilters] = useState<FilterState>({
     party: '',
     size: '',
@@ -28,23 +31,38 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
   });
   
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>({
-    key: 'timestamp', // Default sort by newest
+    key: 'timestamp',
     direction: 'desc'
   });
 
   const uniqueParties = useMemo(() => Array.from(new Set(data.map(d => d.partyName))).sort(), [data]);
   const uniqueSizes = useMemo(() => Array.from(new Set(data.map(d => d.size))).sort(), [data]);
 
+  // Filter Logic including Tabs
   const filteredData = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+
     return data.filter(entry => {
+      // 1. Tab Filter
+      if (currentTab === 'today' && entry.date !== todayStr) return false;
+      if (currentTab === 'running' && entry.status !== 'running') return false;
+      if (currentTab === 'pending' && entry.status !== 'pending') return false;
+      if (currentTab === 'completed' && entry.status !== 'completed') return false;
+
+      // 2. Dropdown Filters
       const matchesParty = filters.party ? entry.partyName === filters.party : true;
       const matchesSize = filters.size ? entry.size === filters.size : true;
       let matchesDate = true;
-      if (filters.startDate) matchesDate = matchesDate && entry.date >= filters.startDate;
-      if (filters.endDate) matchesDate = matchesDate && entry.date <= filters.endDate;
+      
+      // Only apply date range filter if NOT in 'today' tab
+      if (currentTab !== 'today') {
+          if (filters.startDate) matchesDate = matchesDate && entry.date >= filters.startDate;
+          if (filters.endDate) matchesDate = matchesDate && entry.date <= filters.endDate;
+      }
+      
       return matchesParty && matchesSize && matchesDate;
     });
-  }, [data, filters]);
+  }, [data, filters, currentTab]);
 
   const sortedData = useMemo(() => {
     if (!sortConfig) return filteredData;
@@ -84,173 +102,186 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
   };
 
   const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
-    if (sortConfig?.key !== columnKey) return <ArrowUpDown className="w-3 h-3 text-slate-300 ml-1" />;
+    if (sortConfig?.key !== columnKey) return <ArrowUpDown className="w-4 h-4 text-slate-300 ml-1" />;
     return sortConfig.direction === 'asc' 
-      ? <ArrowUp className="w-3 h-3 text-indigo-600 ml-1" /> 
-      : <ArrowDown className="w-3 h-3 text-indigo-600 ml-1" />;
+      ? <ArrowUp className="w-4 h-4 text-black ml-1" /> 
+      : <ArrowDown className="w-4 h-4 text-black ml-1" />;
   };
 
   const StatusBadge = ({ status }: { status: DispatchStatus }) => {
     const config = {
-      pending: { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
-      running: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
-      completed: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' }
+      pending: { bg: 'bg-amber-300', text: 'text-black', border: 'border-black' },
+      running: { bg: 'bg-blue-300', text: 'text-black', border: 'border-black' },
+      completed: { bg: 'bg-emerald-400', text: 'text-black', border: 'border-black' }
     };
     const style = config[status] || config.pending;
 
     return (
-      <span className={`inline-flex items-center justify-center px-4 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wide border ${style.bg} ${style.text} ${style.border} shadow-sm`}>
+      <span className={`inline-flex items-center justify-center px-3 py-1 text-xs font-black uppercase tracking-wider border-2 ${style.bg} ${style.text} ${style.border} shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]`}>
         {status}
       </span>
     );
   };
 
-  const KPICard = ({ title, value, sub, icon: Icon, gradient }: any) => (
-    <div className={`relative overflow-hidden rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white border border-white hover:-translate-y-1 transition-transform duration-300 group`}>
-        <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${gradient} opacity-10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:opacity-20 transition-opacity`}></div>
-        
-        <div className="relative z-10 flex items-start justify-between mb-4">
-            <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-lg shadow-indigo-100`}>
-                <Icon className="w-6 h-6" strokeWidth={1.5} />
+  const KPICard = ({ title, value, sub, icon: Icon, color }: any) => (
+    <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between">
+        <div>
+            <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">{title}</h3>
+            <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-black tracking-tighter">{value}</span>
+                <span className="text-xs font-bold text-slate-500">{sub}</span>
             </div>
-            {/* Decorative circle */}
-            <div className="w-2 h-2 rounded-full bg-slate-200"></div>
         </div>
-        
-        <div className="relative z-10">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">{title}</h3>
-            <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-black text-slate-800 tracking-tight">{value}</span>
-                <span className="text-sm font-semibold text-slate-400">{sub}</span>
-            </div>
+        <div className={`p-3 border-2 border-black ${color}`}>
+            <Icon className="w-6 h-6 text-black" strokeWidth={2.5} />
         </div>
     </div>
   );
 
+  const TabButton = ({ id, label, icon: Icon }: { id: TabView, label: string, icon: any }) => (
+    <button
+      onClick={() => setCurrentTab(id)}
+      className={`flex-1 py-3 border-2 border-black font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 transition-all active:translate-y-1 ${
+        currentTab === id 
+          ? 'bg-black text-white shadow-[4px_4px_0px_0px_#94a3b8]' 
+          : 'bg-white text-slate-500 hover:bg-slate-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
+      }`}
+    >
+      <Icon className="w-4 h-4" strokeWidth={3} />
+      <span className="hidden sm:inline">{label}</span>
+    </button>
+  );
+
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)] gap-8 font-sans">
+    <div className="flex flex-col h-[calc(100vh-6rem)] gap-6 font-sans">
       
-      {/* KPIs - Premium Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 shrink-0">
+      {/* 1. Tabs Section (Admin Job View) */}
+      <div className="flex gap-3 shrink-0 overflow-x-auto pb-1">
+        <TabButton id="today" label="Today's Job" icon={Calendar} />
+        <TabButton id="running" label="Running" icon={Activity} />
+        <TabButton id="pending" label="Pending" icon={Clock} />
+        <TabButton id="completed" label="Completed" icon={CheckCircle2} />
+        <TabButton id="all" label="All Records" icon={Layers} />
+      </div>
+
+      {/* 2. KPIs (Bold Blocks) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
         <KPICard 
-            title="Total Dispatch" 
+            title="Total Weight" 
             value={totals.weight.toLocaleString()} 
             sub="kg" 
             icon={Scale}
-            gradient="from-indigo-500 to-purple-500"
+            color="bg-indigo-300"
         />
         <KPICard 
-            title="Total Bundles" 
+            title="Bundles" 
             value={totals.bundles.toLocaleString()} 
             sub="pkg" 
             icon={Package} 
-            gradient="from-blue-500 to-cyan-500"
+            color="bg-blue-300"
         />
         <KPICard 
-            title="Total Pieces" 
+            title="Total Pcs" 
             value={totals.pcs.toLocaleString()} 
             sub="pcs" 
             icon={Layers} 
-            gradient="from-emerald-500 to-teal-500"
+            color="bg-emerald-300"
         />
         <KPICard 
-            title="Avg. Weight" 
+            title="Avg Weight" 
             value={(totals.count > 0 ? totals.weight / totals.count : 0).toFixed(0)} 
             sub="kg" 
             icon={TrendingUp} 
-            gradient="from-orange-500 to-amber-500"
+            color="bg-amber-300"
         />
       </div>
 
-      {/* Main Content - Fit Screen Table with Soft UI */}
-      <div className="flex-1 bg-white/70 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white flex flex-col overflow-hidden">
+      {/* 3. Data Table (Grid Style) */}
+      <div className="flex-1 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden">
         
         {/* Toolbar */}
-        <div className="px-8 py-6 border-b border-slate-100 flex flex-col xl:flex-row gap-6 justify-between items-start xl:items-center bg-white/50">
-            <div className="flex items-center gap-4">
-                <div className="bg-white p-3 rounded-2xl shadow-md shadow-slate-100 border border-slate-50 text-indigo-600">
-                    <Search className="w-5 h-5" />
+        <div className="p-4 border-b-2 border-black flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-slate-50">
+            <div className="flex items-center gap-3">
+                <div className="bg-black p-2 border-2 border-black text-white shadow-[2px_2px_0px_0px_#94a3b8]">
+                    <Search className="w-5 h-5" strokeWidth={3} />
                 </div>
-                <div>
-                    <h2 className="text-lg font-black text-slate-800 tracking-tight">Dispatch Records</h2>
-                    <p className="text-sm text-slate-400 font-medium">{filteredData.length} records found</p>
-                </div>
+                <h2 className="text-lg font-black text-black uppercase tracking-tighter">
+                    {currentTab === 'all' ? 'All Records' : `${currentTab.charAt(0).toUpperCase() + currentTab.slice(1)} Jobs`}
+                </h2>
             </div>
             
-            <div className="flex flex-wrap gap-3 w-full xl:w-auto">
+            <div className="flex flex-wrap gap-3 w-full xl:w-auto items-center">
                 <select 
-                    className="px-5 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 hover:border-indigo-200 focus:ring-4 focus:ring-indigo-500/5 outline-none cursor-pointer transition-all shadow-sm min-w-[160px]"
+                    className="px-4 py-2 bg-white border-2 border-black text-xs font-bold text-black outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:bg-yellow-50"
                     value={filters.party}
                     onChange={(e) => setFilters({...filters, party: e.target.value})}
                 >
-                    <option value="">All Parties</option>
+                    <option value="">ALL PARTIES</option>
                     {uniqueParties.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
 
                 <select 
-                    className="px-5 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 hover:border-indigo-200 focus:ring-4 focus:ring-indigo-500/5 outline-none cursor-pointer transition-all shadow-sm min-w-[140px]"
+                    className="px-4 py-2 bg-white border-2 border-black text-xs font-bold text-black outline-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:bg-yellow-50"
                     value={filters.size}
                     onChange={(e) => setFilters({...filters, size: e.target.value})}
                 >
-                    <option value="">All Sizes</option>
+                    <option value="">ALL SIZES</option>
                     {uniqueSizes.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
 
-                <div className="flex items-center bg-white rounded-2xl px-4 gap-3 border border-slate-100 shadow-sm focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-500/5 transition-all">
-                     <input 
-                        type="date"
-                        className="bg-transparent border-0 text-sm font-bold text-slate-600 focus:ring-0 outline-none w-32 py-3"
-                        value={filters.startDate}
-                        onChange={(e) => setFilters({...filters, startDate: e.target.value})}
-                     />
-                     <span className="text-slate-300 font-light">|</span>
-                     <input 
-                        type="date"
-                        className="bg-transparent border-0 text-sm font-bold text-slate-600 focus:ring-0 outline-none w-32 py-3"
-                        value={filters.endDate}
-                        onChange={(e) => setFilters({...filters, endDate: e.target.value})}
-                     />
-                </div>
+                {currentTab !== 'today' && (
+                    <div className="flex items-center bg-white border-2 border-black px-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <input 
+                            type="date"
+                            className="bg-transparent border-0 text-xs font-bold text-black focus:ring-0 outline-none w-28 py-2"
+                            value={filters.startDate}
+                            onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+                        />
+                        <span className="text-black font-black">-</span>
+                        <input 
+                            type="date"
+                            className="bg-transparent border-0 text-xs font-bold text-black focus:ring-0 outline-none w-28 py-2"
+                            value={filters.endDate}
+                            onChange={(e) => setFilters({...filters, endDate: e.target.value})}
+                        />
+                    </div>
+                )}
 
-                 {(filters.party || filters.size || filters.startDate || filters.endDate) && (
+                {(filters.party || filters.size || (filters.startDate && currentTab !== 'today')) && (
                     <button 
                         onClick={clearFilters}
-                        className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-colors"
-                        title="Clear Filters"
+                        className="p-2 bg-red-500 text-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-none transition-all"
                     >
-                        <XCircle className="w-6 h-6" />
+                        <XCircle className="w-5 h-5" strokeWidth={2.5} />
                     </button>
                 )}
             </div>
         </div>
 
-        {/* Data Table */}
-        <div className="flex-1 overflow-auto no-scrollbar bg-white/40">
+        {/* Table */}
+        <div className="flex-1 overflow-auto no-scrollbar">
             {sortedData.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                    <div className="bg-slate-50 p-8 rounded-3xl mb-4 shadow-inner">
-                        <Search className="w-12 h-12 text-slate-300" />
-                    </div>
-                    <p className="text-base font-bold">No records matching your filters</p>
+                    <p className="text-lg font-black text-slate-300 uppercase">No records found</p>
                 </div>
             ) : (
                 <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm shadow-sm">
+                    <thead className="sticky top-0 z-10 bg-slate-100 border-b-2 border-black shadow-sm">
                         <tr>
                             {[
-                                { label: 'Date', key: 'date', width: 'w-[12%]', className: 'pl-8' },
+                                { label: 'Date', key: 'date', width: 'w-[12%]', className: 'pl-6' },
                                 { label: 'Party Name', key: 'partyName', width: 'w-[22%]' },
                                 { label: 'Size', key: 'size', width: 'w-[12%]' },
                                 { label: 'Rolls', key: 'bundle', width: 'w-[10%]', align: 'center' },
                                 { label: 'Pcs', key: 'pcs', width: 'w-[10%]', align: 'center' },
                                 { label: 'Disp. Wt', key: 'weight', width: 'w-[12%]', align: 'right' },
                                 { label: 'Prod. Wt', key: 'productionWeight', width: 'w-[12%]', align: 'right' },
-                                { label: 'Status', key: 'status', width: 'w-[10%]', align: 'center', className: 'pr-8' },
+                                { label: 'Status', key: 'status', width: 'w-[10%]', align: 'center', className: 'pr-6' },
                             ].map((col) => (
                                 <th 
                                     key={col.key}
                                     onClick={() => handleSort(col.key as SortKey)}
-                                    className={`py-6 px-4 text-xs font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-indigo-600 transition-colors select-none ${col.width} ${col.className || ''} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}`}
+                                    className={`py-4 px-4 text-xs font-black text-black uppercase tracking-widest cursor-pointer hover:bg-slate-200 transition-colors select-none border-r border-slate-200 last:border-r-0 ${col.width} ${col.className || ''} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}`}
                                 >
                                     <div className={`flex items-center gap-1 ${col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : 'justify-start'}`}>
                                         {col.label}
@@ -260,47 +291,47 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50">
+                    <tbody className="divide-y divide-slate-200">
                         {sortedData.map((entry) => {
                             const isMM = entry.size.toLowerCase().includes('mm');
                             return (
-                                <tr key={entry.id} className="hover:bg-indigo-50/30 transition-colors group cursor-default">
-                                    <td className="py-5 px-4 pl-8 align-middle text-sm font-bold text-slate-400 font-mono whitespace-nowrap">
+                                <tr key={entry.id} className="hover:bg-yellow-50 transition-colors group">
+                                    <td className="py-4 px-4 pl-6 align-middle text-sm font-bold text-slate-600 font-mono border-r border-slate-100">
                                         {entry.date}
                                     </td>
-                                    <td className="py-5 px-4 align-middle">
-                                        <div className="font-black text-slate-800 text-base truncate leading-tight" title={entry.partyName}>
+                                    <td className="py-4 px-4 align-middle border-r border-slate-100">
+                                        <div className="font-black text-black text-sm truncate uppercase" title={entry.partyName}>
                                             {entry.partyName}
                                         </div>
                                     </td>
-                                    <td className="py-5 px-4 align-middle">
-                                        <span className="inline-block px-3 py-1 rounded-lg bg-white border border-slate-100 text-slate-600 text-sm font-extrabold shadow-sm">
+                                    <td className="py-4 px-4 align-middle border-r border-slate-100">
+                                        <span className="font-bold text-slate-800 text-sm">
                                             {entry.size}
                                         </span>
                                     </td>
-                                    <td className="py-5 px-4 text-center align-middle">
-                                        <span className="font-black text-slate-700 text-base">
+                                    <td className="py-4 px-4 text-center align-middle border-r border-slate-100">
+                                        <span className="font-black text-black text-sm">
                                             {entry.bundle ? `${entry.bundle} 📦` : '-'}
                                         </span>
                                     </td>
-                                    <td className="py-5 px-4 text-center align-middle">
+                                    <td className="py-4 px-4 text-center align-middle border-r border-slate-100">
                                         {isMM ? (
-                                            <span className="text-[11px] font-black text-indigo-500 uppercase tracking-wider bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">Rolls</span>
+                                            <span className="text-[10px] font-black text-white bg-black px-2 py-0.5 uppercase tracking-widest">Rolls</span>
                                         ) : (
-                                            <span className="font-black text-slate-700 text-base">{entry.pcs || '-'}</span>
+                                            <span className="font-black text-black text-sm">{entry.pcs || '-'}</span>
                                         )}
                                     </td>
-                                    <td className="py-5 px-4 text-right align-middle">
-                                        <span className="font-black text-slate-900 text-base block tabular-nums">
+                                    <td className="py-4 px-4 text-right align-middle border-r border-slate-100">
+                                        <span className="font-black text-indigo-700 text-sm">
                                             {entry.weight > 0 ? `${entry.weight.toLocaleString()} kg` : '-'}
                                         </span>
                                     </td>
-                                    <td className="py-5 px-4 text-right align-middle">
-                                        <span className="font-bold text-slate-400 text-sm block tabular-nums">
+                                    <td className="py-4 px-4 text-right align-middle border-r border-slate-100">
+                                        <span className="font-bold text-slate-500 text-sm">
                                             {entry.productionWeight > 0 ? `${entry.productionWeight.toLocaleString()} kg` : '-'}
                                         </span>
                                     </td>
-                                    <td className="py-5 px-4 pr-8 text-center align-middle">
+                                    <td className="py-4 px-4 pr-6 text-center align-middle">
                                         <StatusBadge status={entry.status} />
                                     </td>
                                 </tr>

@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { DispatchEntry, DispatchStatus, MOCK_PARTIES } from '../types';
-import { Plus, RotateCcw, CheckCircle2, Pencil, Trash2, Layers, Scale, AlertCircle, CheckSquare, Square, X, Calendar, Ruler, User, Package, Clock, Activity, CheckCircle } from 'lucide-react';
+import { Plus, RotateCcw, CheckCircle2, Pencil, Trash2, Layers, Scale, AlertCircle, CheckSquare, Square, X, Calendar, Ruler, User, Package, Send, UserPlus } from 'lucide-react';
 
 interface DispatchEntryProps {
   entries: DispatchEntry[];
@@ -16,6 +17,12 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
+  // Party Management
+  const [availableParties, setAvailableParties] = useState<string[]>(MOCK_PARTIES);
+  const [newPartyName, setNewPartyName] = useState('');
+  const [showAddParty, setShowAddParty] = useState(false);
+
   const [formData, setFormData] = useState({
     partyName: '',
     size: '',
@@ -28,7 +35,33 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
   });
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
-  // Sort entries by timestamp descending (Newest First)
+  // Load custom parties from local storage
+  useEffect(() => {
+      const saved = localStorage.getItem('custom_parties');
+      if (saved) {
+          setAvailableParties([...MOCK_PARTIES, ...JSON.parse(saved)]);
+      }
+  }, []);
+
+  const handleAddParty = () => {
+      if (newPartyName.trim()) {
+          const updatedParties = [...availableParties, newPartyName.trim()];
+          // Deduplicate
+          const uniqueParties = Array.from(new Set(updatedParties));
+          setAvailableParties(uniqueParties);
+          
+          // Save custom ones (filtering out mocks to avoid dupes in logic, but simplifed here)
+          const custom = uniqueParties.filter(p => !MOCK_PARTIES.includes(p));
+          localStorage.setItem('custom_parties', JSON.stringify(custom));
+          
+          setFormData(prev => ({ ...prev, partyName: newPartyName.trim() }));
+          setNewPartyName('');
+          setShowAddParty(false);
+          setNotification({ type: 'success', message: 'New Party Added' });
+          setTimeout(() => setNotification(null), 2000);
+      }
+  };
+
   const sortedEntries = useMemo(() => {
     return [...entries].sort((a, b) => b.timestamp - a.timestamp);
   }, [entries]);
@@ -129,11 +162,16 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
   };
 
   const toggleSelectAll = () => {
-      if (selectedIds.size === entries.length && entries.length > 0) {
-          setSelectedIds(new Set());
-      } else {
-          setSelectedIds(new Set(entries.map(e => e.id)));
-      }
+    if (selectedIds.size === entries.length) {
+        setSelectedIds(new Set());
+    } else {
+        setSelectedIds(new Set(entries.map(e => e.id)));
+    }
+  };
+
+  const sendWhatsApp = (entry: DispatchEntry) => {
+      const text = `*Job Complete Update*%0A%0A*Party:* ${entry.partyName}%0A*Size:* ${entry.size}%0A*Weight:* ${entry.weight} kg%0A*Bundles:* ${entry.bundle} 📦%0A%0A_Sent via RDMS_`;
+      window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
   const executeBulkDelete = () => {
@@ -147,101 +185,126 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-32 pt-2 font-sans">
+    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-32 pt-2 font-sans">
       
-      {/* Header with Context */}
+      {/* Header */}
       <div className="flex items-center justify-between px-2">
         <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-               {editingId ? 'Edit Dispatch' : 'New Dispatch'}
-               <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-600 text-[10px] font-extrabold uppercase tracking-wider border border-indigo-200">
-                 Entry Form
-               </span>
+            <h1 className="text-2xl font-black text-black uppercase tracking-tighter flex items-center gap-3">
+               {editingId ? 'Edit Job' : 'User Dashboard'}
             </h1>
-            <p className="text-sm font-medium text-slate-400 mt-1 ml-1">Enter production details for today's dispatch</p>
+            <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">Manage Production & Parties</p>
         </div>
+        
+        <button 
+            onClick={() => setShowAddParty(!showAddParty)}
+            className="bg-black text-white px-4 py-2 text-xs font-bold uppercase tracking-wide border-2 border-black shadow-[4px_4px_0px_0px_#fbbf24] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+        >
+            <UserPlus className="w-4 h-4" />
+            Add Party
+        </button>
       </div>
 
-      {/* Main Layout: Form & List */}
+      {/* Add Party Modal Area */}
+      {showAddParty && (
+          <div className="bg-yellow-100 border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex gap-2 items-end animate-in slide-in-from-top-2">
+              <div className="flex-1">
+                  <label className="text-xs font-black text-black uppercase block mb-1">New Party Name</label>
+                  <input 
+                    type="text" 
+                    value={newPartyName}
+                    onChange={(e) => setNewPartyName(e.target.value)}
+                    className="w-full bg-white border-2 border-black px-3 py-2 text-sm font-bold outline-none focus:bg-white"
+                    placeholder="Enter Company Name"
+                  />
+              </div>
+              <button 
+                onClick={handleAddParty}
+                className="bg-black text-white px-4 py-2.5 border-2 border-black text-xs font-bold uppercase tracking-wide hover:bg-slate-800"
+              >
+                  Save
+              </button>
+          </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* Left: Input Form - Premium Card Style */}
+        {/* Left: Entry Form - Desi Style */}
         <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white relative overflow-hidden">
-                {/* Decorative Background Blur */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none opacity-50"></div>
+            <div className="bg-white border-4 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                 
-                <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+                <div className="flex items-center gap-2 mb-6 border-b-4 border-black pb-2">
+                    <div className="bg-black text-white p-1"><Plus className="w-5 h-5" strokeWidth={3} /></div>
+                    <h2 className="text-lg font-black text-black uppercase">Job Entry</h2>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
                     
-                    {/* Primary Info */}
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Party Name</label>
-                                <div className="relative group">
-                                    <User className="absolute left-4 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                                    <input
-                                        list="party-options"
-                                        name="partyName"
-                                        value={formData.partyName}
-                                        onChange={handleChange}
-                                        placeholder="Select Client..."
-                                        className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all placeholder:text-slate-300"
-                                        required
-                                    />
-                                    <datalist id="party-options">
-                                        {MOCK_PARTIES.map(p => <option key={p} value={p} />)}
-                                    </datalist>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Date</label>
-                                <div className="relative group">
-                                    <Calendar className="absolute left-4 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                                    <input
-                                        type="date"
-                                        name="date"
-                                        value={formData.date}
-                                        onChange={handleChange}
-                                        className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
-                                        required
-                                    />
-                                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-xs font-black text-black uppercase">Party Name</label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-3 w-5 h-5 text-black" />
+                                <input
+                                    list="party-options"
+                                    name="partyName"
+                                    value={formData.partyName}
+                                    onChange={handleChange}
+                                    placeholder="Select Party..."
+                                    className="w-full pl-10 pr-3 py-2.5 bg-white border-2 border-black text-sm font-bold text-black focus:bg-yellow-50 outline-none"
+                                    required
+                                />
+                                <datalist id="party-options">
+                                    {availableParties.map(p => <option key={p} value={p} />)}
+                                </datalist>
                             </div>
                         </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Size & Dimensions</label>
-                            <div className="relative group">
-                                <Ruler className="absolute left-4 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                        <div className="space-y-1">
+                            <label className="text-xs font-black text-black uppercase">Date</label>
+                            <div className="relative">
+                                <Calendar className="absolute left-3 top-3 w-5 h-5 text-black" />
                                 <input
-                                    type="text"
-                                    name="size"
-                                    value={formData.size}
+                                    type="date"
+                                    name="date"
+                                    value={formData.date}
                                     onChange={handleChange}
-                                    placeholder="e.g. 12mm or 12x12"
-                                    className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all placeholder:text-slate-300"
+                                    className="w-full pl-10 pr-3 py-2.5 bg-white border-2 border-black text-sm font-bold text-black focus:bg-yellow-50 outline-none"
                                     required
                                 />
                             </div>
                         </div>
                     </div>
 
-                    <div className="h-px bg-slate-100"></div>
+                    <div className="space-y-1">
+                        <label className="text-xs font-black text-black uppercase">Size (e.g. 12mm)</label>
+                        <div className="relative">
+                            <Ruler className="absolute left-3 top-3 w-5 h-5 text-black" />
+                            <input
+                                type="text"
+                                name="size"
+                                value={formData.size}
+                                onChange={handleChange}
+                                placeholder="Size"
+                                className="w-full pl-10 pr-3 py-2.5 bg-white border-2 border-black text-sm font-bold text-black focus:bg-yellow-50 outline-none"
+                                required
+                            />
+                        </div>
+                    </div>
 
-                    {/* Metrics */}
-                    <div className="grid grid-cols-2 gap-6">
-                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Rolls / Bundles</label>
-                            <div className="relative group">
-                                <Package className="absolute left-4 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                    <div className="h-1 bg-slate-100 border-t-2 border-dashed border-slate-300"></div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-1">
+                            <label className="text-xs font-black text-black uppercase">Rolls / Bundles</label>
+                            <div className="relative">
+                                <Package className="absolute left-3 top-3 w-5 h-5 text-black" />
                                 <input
                                     type="number"
                                     name="bundle"
                                     value={formData.bundle}
                                     onChange={handleChange}
                                     placeholder="0"
-                                    className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                                    className="w-full pl-10 pr-3 py-2.5 bg-white border-2 border-black text-sm font-bold text-black focus:bg-yellow-50 outline-none"
                                     min="0"
                                     required={formData.status === 'completed'}
                                 />
@@ -249,17 +312,17 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                         </div>
                         
                          {!isMMSize && (
-                            <div className="space-y-2 animate-in fade-in zoom-in">
-                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Total Pcs</label>
-                                <div className="relative group">
-                                    <Layers className="absolute left-4 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                            <div className="space-y-1">
+                                <label className="text-xs font-black text-black uppercase">Total Pcs</label>
+                                <div className="relative">
+                                    <Layers className="absolute left-3 top-3 w-5 h-5 text-black" />
                                     <input
                                         type="number"
                                         name="pcs"
                                         value={formData.pcs}
                                         onChange={handleChange}
                                         placeholder="0"
-                                        className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                                        className="w-full pl-10 pr-3 py-2.5 bg-white border-2 border-black text-sm font-bold text-black focus:bg-yellow-50 outline-none"
                                         min="0"
                                         required={formData.status === 'completed'}
                                     />
@@ -267,10 +330,10 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                             </div>
                         )}
 
-                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Dispatch Wt (kg)</label>
-                            <div className="relative group">
-                                <Scale className="absolute left-4 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                         <div className="space-y-1">
+                            <label className="text-xs font-black text-black uppercase">Dispatch Wt (kg)</label>
+                            <div className="relative">
+                                <Scale className="absolute left-3 top-3 w-5 h-5 text-black" />
                                 <input
                                     type="number"
                                     name="weight"
@@ -278,20 +341,20 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                                     value={formData.weight}
                                     onChange={handleChange}
                                     placeholder="0.00"
-                                    className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                                    className="w-full pl-10 pr-3 py-2.5 bg-white border-2 border-black text-sm font-bold text-black focus:bg-yellow-50 outline-none"
                                     min="0"
                                     required={formData.status === 'completed'}
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between ml-1">
+                        <div className="space-y-1">
+                            <label className="text-xs font-black text-black uppercase flex justify-between">
                                 <span>Prod. Wt (kg)</span>
-                                <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-400 font-bold">Optional</span>
+                                <span className="text-[10px] text-slate-400">(Optional)</span>
                             </label>
-                            <div className="relative group">
-                                <Scale className="absolute left-4 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                            <div className="relative">
+                                <Scale className="absolute left-3 top-3 w-5 h-5 text-black" />
                                 <input
                                     type="number"
                                     name="productionWeight"
@@ -299,7 +362,7 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                                     value={formData.productionWeight}
                                     onChange={handleChange}
                                     placeholder="0.00"
-                                    className="w-full pl-10 pr-4 py-3 bg-slate-50/50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                                    className="w-full pl-10 pr-3 py-2.5 bg-white border-2 border-black text-sm font-bold text-black focus:bg-yellow-50 outline-none"
                                     min="0"
                                 />
                             </div>
@@ -307,38 +370,41 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                     </div>
 
                     {/* Status */}
-                    <div className="bg-slate-50/80 p-1.5 rounded-2xl flex shadow-inner">
-                        {['pending', 'running', 'completed'].map((s) => (
-                            <button
-                                key={s}
-                                type="button"
-                                onClick={() => setFormData({...formData, status: s as DispatchStatus})}
-                                className={`flex-1 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wide transition-all duration-300 ${
-                                    formData.status === s 
-                                    ? 'bg-white text-indigo-600 shadow-md shadow-slate-200 scale-100' 
-                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100/50'
-                                }`}
-                            >
-                                {s}
-                            </button>
-                        ))}
+                    <div className="space-y-1">
+                        <label className="text-xs font-black text-black uppercase">Job Status</label>
+                        <div className="flex border-2 border-black bg-white p-1 gap-1">
+                            {['pending', 'running', 'completed'].map((s) => (
+                                <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => setFormData({...formData, status: s as DispatchStatus})}
+                                    className={`flex-1 py-2 text-xs font-black uppercase tracking-wide transition-all ${
+                                        formData.status === s 
+                                        ? 'bg-black text-white shadow-[2px_2px_0px_0px_#fbbf24]' 
+                                        : 'text-slate-400 hover:bg-slate-100 hover:text-black'
+                                    }`}
+                                >
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-4 pt-4">
+                    <div className="flex gap-3 pt-2">
                         <button
                             type="button"
                             onClick={resetForm}
-                            className="px-5 py-3.5 bg-white border-2 border-slate-100 text-slate-400 rounded-xl font-bold hover:bg-slate-50 hover:text-slate-600 transition-all"
+                            className="px-4 py-3 bg-white border-2 border-black text-black font-bold hover:bg-slate-100"
                         >
-                            <RotateCcw className="w-5 h-5" />
+                            <RotateCcw className="w-5 h-5" strokeWidth={3} />
                         </button>
                         <button
                             type="submit"
-                            className={`flex-1 flex items-center justify-center gap-2 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 active:translate-y-0 ${
+                            className={`flex-1 flex items-center justify-center gap-2 text-white font-black uppercase tracking-widest py-3 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all ${
                                 editingId 
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-amber-200' 
-                                : 'bg-gradient-to-r from-indigo-600 to-violet-600 shadow-indigo-200'
+                                ? 'bg-orange-500' 
+                                : 'bg-indigo-600'
                             }`}
                         >
                             {editingId ? <Pencil className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
@@ -347,10 +413,10 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                     </div>
 
                      {notification && (
-                        <div className={`p-4 rounded-xl flex items-center gap-3 text-sm font-bold animate-in slide-in-from-top-2 ${
-                            notification.type === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'
+                        <div className={`p-3 border-2 border-black flex items-center gap-2 text-xs font-bold uppercase ${
+                            notification.type === 'success' ? 'bg-emerald-300 text-black' : 'bg-red-300 text-black'
                         }`}>
-                            {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                            {notification.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                             {notification.message}
                         </div>
                     )}
@@ -358,57 +424,62 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
             </div>
         </div>
 
-        {/* Right: Recent List */}
+        {/* Right: Recent List - Bold Cards */}
         <div className="lg:col-span-5 flex flex-col h-full">
-             <div className="flex items-center justify-between mb-6 px-2">
-                <h2 className="text-xl font-black text-slate-800">Recent Activity</h2>
+             <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-lg font-black text-black uppercase">Recent Jobs</h2>
                 {entries.length > 0 && (
-                     <button onClick={toggleSelectAll} className="text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors">
-                         {selectedIds.size === entries.length ? <CheckSquare className="w-3.5 h-3.5"/> : <Square className="w-3.5 h-3.5"/>}
+                     <button onClick={toggleSelectAll} className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                         {selectedIds.size === entries.length ? <CheckSquare className="w-4 h-4"/> : <Square className="w-4 h-4"/>}
                          Select All
                      </button>
                 )}
              </div>
              
-             <div className="flex-1 overflow-y-auto max-h-[600px] space-y-4 pr-2 pb-10 no-scrollbar">
+             <div className="flex-1 overflow-y-auto max-h-[700px] space-y-3 pr-1 pb-10">
                  {sortedEntries.length === 0 ? (
-                     <div className="h-64 flex flex-col items-center justify-center text-slate-400 bg-white/50 rounded-[2rem] border-2 border-dashed border-slate-200">
-                         <Layers className="w-12 h-12 mb-3 text-slate-200" />
-                         <span className="text-sm font-bold">No recent jobs</span>
+                     <div className="h-40 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-300">
+                         <Layers className="w-8 h-8 mb-2 text-slate-300" />
+                         <span className="text-xs font-bold uppercase">No jobs yet</span>
                      </div>
                  ) : (
                      sortedEntries.map(entry => {
                          const isSelected = selectedIds.has(entry.id);
                          return (
-                             <div key={entry.id} className={`bg-white p-5 rounded-[1.5rem] border-2 transition-all duration-300 group ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/30' : 'border-transparent shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:border-indigo-100 hover:-translate-x-1'}`}>
-                                 <div className="flex justify-between items-start mb-3">
-                                     <div className="flex items-center gap-4">
-                                         <button onClick={() => toggleSelection(entry.id)} className="text-slate-300 hover:text-indigo-600 transition-colors">
-                                             {isSelected ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5" />}
+                             <div key={entry.id} className={`bg-white p-4 border-2 border-black transition-all ${isSelected ? 'bg-indigo-50 shadow-none translate-x-1 translate-y-1' : 'shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5'}`}>
+                                 <div className="flex justify-between items-start mb-2">
+                                     <div className="flex items-center gap-3">
+                                         <button onClick={() => toggleSelection(entry.id)} className="text-slate-300 hover:text-black transition-colors">
+                                             {isSelected ? <CheckSquare className="w-5 h-5 text-black" /> : <Square className="w-5 h-5" />}
                                          </button>
                                          <div>
-                                             <h3 className="text-base font-black text-slate-800 leading-tight">{entry.partyName}</h3>
-                                             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{entry.date} • {entry.size}</span>
+                                             <h3 className="text-sm font-black text-black uppercase leading-tight">{entry.partyName}</h3>
+                                             <span className="text-[10px] font-bold text-slate-500 uppercase">{entry.date} • {entry.size}</span>
                                          </div>
                                      </div>
-                                     <span className={`px-3 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wide ${
-                                         entry.status === 'completed' ? 'bg-emerald-100 text-emerald-600' :
-                                         entry.status === 'running' ? 'bg-blue-100 text-blue-600' :
-                                         'bg-amber-100 text-amber-600'
+                                     <span className={`px-2 py-0.5 text-[10px] font-black uppercase border-2 border-black ${
+                                         entry.status === 'completed' ? 'bg-emerald-300' :
+                                         entry.status === 'running' ? 'bg-blue-300' :
+                                         'bg-amber-300'
                                      }`}>
                                          {entry.status}
                                      </span>
                                  </div>
                                  
-                                 <div className="flex items-center justify-between pl-9">
-                                     <div className="flex gap-2 text-xs font-bold text-slate-600">
-                                         <span className="bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{entry.bundle} 📦</span>
-                                         <span className="bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100">{entry.weight} kg</span>
+                                 <div className="flex items-center justify-between pl-8 mt-3">
+                                     <div className="flex gap-2 text-xs font-black text-black">
+                                         <span className="bg-slate-100 px-2 py-1 border border-slate-300">{entry.bundle} 📦</span>
+                                         <span className="bg-slate-100 px-2 py-1 border border-slate-300">{entry.weight} kg</span>
                                      </div>
                                      
-                                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-                                         <button onClick={() => handleEditClick(entry)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil className="w-4 h-4"/></button>
-                                         <button onClick={() => onDeleteEntry(entry.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                                     <div className="flex items-center gap-2">
+                                         {entry.status === 'completed' && (
+                                             <button onClick={() => sendWhatsApp(entry)} title="Share on WhatsApp" className="p-1.5 text-black hover:bg-green-100 rounded border border-transparent hover:border-green-600 transition-all">
+                                                 <Send className="w-4 h-4" />
+                                             </button>
+                                         )}
+                                         <button onClick={() => handleEditClick(entry)} className="p-1.5 text-black hover:bg-yellow-100 rounded border border-transparent hover:border-yellow-600 transition-all"><Pencil className="w-4 h-4"/></button>
+                                         <button onClick={() => onDeleteEntry(entry.id)} className="p-1.5 text-black hover:bg-red-100 rounded border border-transparent hover:border-red-600 transition-all"><Trash2 className="w-4 h-4"/></button>
                                      </div>
                                  </div>
                              </div>
@@ -419,20 +490,19 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
         </div>
       </div>
 
-      {/* Bulk Action Bar - Floating Glass */}
+      {/* Bulk Action Bar - Bold Fixed */}
       {selectedIds.size > 0 && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-20 duration-500">
-              <div className="bg-slate-900/90 backdrop-blur-md text-white rounded-full px-8 py-4 shadow-2xl shadow-slate-900/20 flex items-center gap-6 border border-white/10">
-                  <span className="text-sm font-bold whitespace-nowrap">{selectedIds.size} Selected</span>
-                  <div className="h-5 w-px bg-white/20"></div>
-                  <div className="flex items-center gap-3">
-                       <button onClick={() => executeBulkStatus('pending')} title="Mark Pending" className="p-2 hover:bg-white/10 rounded-full transition-colors text-amber-400"><Clock className="w-5 h-5"/></button>
-                       <button onClick={() => executeBulkStatus('running')} title="Mark Running" className="p-2 hover:bg-white/10 rounded-full transition-colors text-blue-400"><Activity className="w-5 h-5"/></button>
-                       <button onClick={() => executeBulkStatus('completed')} title="Mark Complete" className="p-2 hover:bg-white/10 rounded-full transition-colors text-emerald-400"><CheckCircle className="w-5 h-5"/></button>
-                       <div className="h-5 w-px bg-white/20 mx-2"></div>
-                       <button onClick={executeBulkDelete} title="Delete" className="p-2 hover:bg-red-500/20 rounded-full transition-colors text-red-400"><Trash2 className="w-5 h-5"/></button>
+          <div className="fixed bottom-6 left-0 right-0 px-4 z-50">
+              <div className="max-w-2xl mx-auto bg-black text-white border-4 border-white shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-4 flex items-center justify-between gap-4">
+                  <span className="text-xs font-black uppercase">{selectedIds.size} Selected</span>
+                  <div className="flex items-center gap-2">
+                       <button onClick={() => executeBulkStatus('pending')} className="px-2 py-1 bg-amber-400 text-black text-[10px] font-black uppercase border border-white hover:bg-amber-300">Pending</button>
+                       <button onClick={() => executeBulkStatus('running')} className="px-2 py-1 bg-blue-400 text-black text-[10px] font-black uppercase border border-white hover:bg-blue-300">Running</button>
+                       <button onClick={() => executeBulkStatus('completed')} className="px-2 py-1 bg-emerald-400 text-black text-[10px] font-black uppercase border border-white hover:bg-emerald-300">Done</button>
+                       <div className="h-4 w-px bg-white/30 mx-1"></div>
+                       <button onClick={executeBulkDelete} className="p-1 text-red-400 hover:text-red-300"><Trash2 className="w-5 h-5"/></button>
+                       <button onClick={() => setSelectedIds(new Set())} className="p-1 text-slate-400 hover:text-white"><X className="w-5 h-5"/></button>
                   </div>
-                  <button onClick={() => setSelectedIds(new Set())} className="ml-4 text-slate-400 hover:text-white transition-colors"><X className="w-5 h-5"/></button>
               </div>
           </div>
       )}
