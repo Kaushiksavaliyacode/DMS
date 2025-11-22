@@ -14,6 +14,25 @@ export interface DispatchEntry {
   timestamp: number;
 }
 
+export interface ChallanItem {
+  id: string;
+  size: string;
+  weight: number;
+  price: number;
+  total: number;
+}
+
+export interface ChallanEntry {
+  id: string;
+  challanNo: string;
+  date: string;
+  partyName: string;
+  paymentType: 'debit' | 'cash';
+  items: ChallanItem[];
+  grandTotal: number;
+  timestamp: number;
+}
+
 export interface AnalyticsSummary {
   totalWeight: number;
   totalBundles: number;
@@ -25,6 +44,7 @@ export enum AppView {
   ENTRY = 'ENTRY',
   DASHBOARD = 'DASHBOARD',
   ANALYTICS = 'ANALYTICS',
+  CHALLAN = 'CHALLAN',
 }
 
 export type UserRole = 'admin' | 'user';

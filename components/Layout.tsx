@@ -1,6 +1,6 @@
 
 import React, { ReactNode, useRef } from 'react';
-import { LayoutDashboard, Box, LogOut, Download, Upload, Shield, User, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Box, LogOut, Download, Upload, Shield, User, Menu, X, Receipt, ScrollText } from 'lucide-react';
 import { AppView, UserRole } from '../types';
 
 interface LayoutProps {
@@ -55,13 +55,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
              </div>
           </div>
 
-          {/* Center: Navigation (Admin Desktop) */}
-          {userRole === 'admin' && (
-             <div className="hidden md:flex items-center bg-slate-100/50 p-1 rounded-2xl border border-slate-200/50">
-                <NavTab view={AppView.DASHBOARD} label="Dashboard" icon={LayoutDashboard} />
-                {/* Analytics merged into Dashboard in Power BI style, but keeping tab if needed for future */}
-             </div>
-          )}
+          {/* Center: Navigation */}
+          <div className="hidden md:flex items-center bg-slate-100/50 p-1 rounded-2xl border border-slate-200/50">
+             {userRole === 'admin' ? (
+                 <NavTab view={AppView.DASHBOARD} label="Dashboard" icon={LayoutDashboard} />
+             ) : (
+                 <>
+                    <NavTab view={AppView.ENTRY} label="Dispatch Entry" icon={ScrollText} />
+                    <NavTab view={AppView.CHALLAN} label="Challan" icon={Receipt} />
+                 </>
+             )}
+          </div>
 
           {/* Right: Actions & Logout */}
           <div className="flex items-center gap-3">
@@ -126,21 +130,33 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
               </div>
            </div>
 
-           {userRole === 'admin' && (
-             <div className="space-y-2">
-               <button onClick={() => { setView(AppView.DASHBOARD); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 text-slate-700 font-semibold">
-                  <LayoutDashboard className="w-5 h-5" /> Dashboard
-               </button>
-               <div className="grid grid-cols-2 gap-2">
-                 <button onClick={onExport} className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 text-slate-600 font-semibold">
-                    <Download className="w-4 h-4" /> Backup
+           <div className="space-y-2">
+             {userRole === 'admin' ? (
+                 <button onClick={() => { setView(AppView.DASHBOARD); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 text-slate-700 font-semibold">
+                    <LayoutDashboard className="w-5 h-5" /> Dashboard
                  </button>
-                 <button onClick={triggerImport} className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 text-slate-600 font-semibold">
-                    <Upload className="w-4 h-4" /> Restore
-                 </button>
-               </div>
-             </div>
-           )}
+             ) : (
+                 <>
+                    <button onClick={() => { setView(AppView.ENTRY); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 text-slate-700 font-semibold">
+                        <ScrollText className="w-5 h-5" /> Dispatch Entry
+                    </button>
+                    <button onClick={() => { setView(AppView.CHALLAN); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 text-slate-700 font-semibold">
+                        <Receipt className="w-5 h-5" /> Challan
+                    </button>
+                 </>
+             )}
+             
+             {userRole === 'admin' && (
+                 <div className="grid grid-cols-2 gap-2 pt-2">
+                    <button onClick={onExport} className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 text-slate-600 font-semibold">
+                        <Download className="w-4 h-4" /> Backup
+                    </button>
+                    <button onClick={triggerImport} className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 text-slate-600 font-semibold">
+                        <Upload className="w-4 h-4" /> Restore
+                    </button>
+                 </div>
+             )}
+           </div>
 
            <button 
               onClick={onLogout}
@@ -160,4 +176,3 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     </div>
   );
 };
-    

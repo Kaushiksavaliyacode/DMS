@@ -4,10 +4,12 @@ import { Layout } from './components/Layout';
 import { DispatchEntryView } from './views/DispatchEntry';
 import { DashboardView } from './views/Dashboard';
 import { AnalyticsView } from './views/Analytics';
+import { ChallanView } from './views/Challan';
 import { LoginView } from './views/Login';
-import { AppView, DispatchEntry, UserRole } from './types';
+import { AppView, DispatchEntry, ChallanEntry, UserRole } from './types';
 
 const LOCAL_STORAGE_KEY = 'dispatch_pro_data';
+const CHALLAN_STORAGE_KEY = 'dispatch_pro_challan';
 const AUTH_STORAGE_KEY = 'dispatch_pro_auth';
 
 // Helper to ensure old data formats don't crash the new app
@@ -16,17 +18,13 @@ const migrateData = (data: any[]): DispatchEntry[] => {
   
   return data.map(item => ({
     ...item,
-    // Ensure ID exists
     id: item.id || crypto.randomUUID(),
-    // Default missing fields
     status: item.status || 'pending', 
     pcs: typeof item.pcs === 'number' ? item.pcs : 0,
     bundle: typeof item.bundle === 'number' ? item.bundle : 0,
     weight: typeof item.weight === 'number' ? item.weight : 0,
     productionWeight: typeof item.productionWeight === 'number' ? item.productionWeight : 0,
-    // Ensure date is valid string
     date: item.date || new Date().toISOString().split('T')[0],
-    // Ensure timestamp exists for sorting
     timestamp: item.timestamp || Date.now()
   }));
 };
@@ -35,9 +33,9 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('admin'); 
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
-  const [isDataLoaded, setIsDataLoaded] = useState(false); // Safety flag
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   
-  // Lazy initialization with MIGRATION logic
+  // --- Dispatch Data State ---
   const [dispatchData, setDispatchData] = useState<DispatchEntry[]>(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -53,7 +51,19 @@ const App: React.FC = () => {
     return [];
   });
 
-  // Mark data as loaded after mount to allow saving
+  // --- Challan Data State ---
+  const [challanData, setChallanData] = useState<ChallanEntry[]>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const savedData = localStorage.getItem(CHALLAN_STORAGE_KEY);
+        if (savedData) return JSON.parse(savedData);
+      }
+    } catch (e) {
+      console.error("Failed to load challan data", e);
+    }
+    return [];
+  });
+
   useEffect(() => {
     setIsDataLoaded(true);
   }, []);
@@ -74,12 +84,9 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Save data whenever it changes - STRICT SAFETY CHECK
+  // Save Dispatch Data
   useEffect(() => {
-    // CRITICAL: Never save if we haven't finished loading. 
-    // This prevents overwriting existing data with [] during a race condition.
     if (!isDataLoaded) return;
-
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dispatchData));
     } catch (e) {
@@ -87,28 +94,23 @@ const App: React.FC = () => {
     }
   }, [dispatchData, isDataLoaded]);
 
-  // Real-time synchronization
+  // Save Challan Data
   useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === LOCAL_STORAGE_KEY && event.newValue) {
-        try {
-          const newData = JSON.parse(event.newValue);
-          setDispatchData(migrateData(newData));
-        } catch (error) {
-          console.error("Error syncing real-time data:", error);
-        }
-      }
-    };
+    if (!isDataLoaded) return;
+    try {
+      localStorage.setItem(CHALLAN_STORAGE_KEY, JSON.stringify(challanData));
+    } catch (e) {
+      console.error("Failed to save challan data", e);
+    }
+  }, [challanData, isDataLoaded]);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  // View switching
+  // View switching default
   useEffect(() => {
     if (isAuthenticated) {
       if (userRole === 'user') {
-        setCurrentView(AppView.ENTRY);
+        if (currentView !== AppView.ENTRY && currentView !== AppView.CHALLAN) {
+             setCurrentView(AppView.ENTRY);
+        }
       } else {
         setCurrentView(AppView.DASHBOARD);
       }
@@ -126,8 +128,7 @@ const App: React.FC = () => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
-  // --- Data Management ---
-
+  // --- Dispatch Actions ---
   const handleAddEntry = (entry: Omit<DispatchEntry, 'id' | 'timestamp'>) => {
     const newEntry: DispatchEntry = {
       ...entry,
@@ -159,16 +160,30 @@ const App: React.FC = () => {
       ));
   };
 
-  // --- Backup & Restore ---
+  // --- Challan Actions ---
+  const handleAddChallan = (entry: Omit<ChallanEntry, 'id' | 'timestamp'>) => {
+      const newChallan: ChallanEntry = {
+          ...entry,
+          id: crypto.randomUUID(),
+          timestamp: Date.now()
+      };
+      setChallanData(prev => [newChallan, ...prev]);
+  };
 
+  const handleDeleteChallan = (id: string) => {
+      setChallanData(prev => prev.filter(c => c.id !== id));
+  };
+
+  // --- Backup & Restore ---
   const handleExportData = () => {
-    const dataStr = JSON.stringify(dispatchData, null, 2);
+    const exportObj = { dispatch: dispatchData, challan: challanData };
+    const dataStr = JSON.stringify(exportObj, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     const date = new Date().toISOString().split('T')[0];
     link.href = url;
-    link.download = `dispatch_pro_backup_${date}.json`;
+    link.download = `rdms_backup_${date}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -177,33 +192,36 @@ const App: React.FC = () => {
   const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
         const parsed = JSON.parse(content);
+        // Support legacy single-array backup or new object backup
         if (Array.isArray(parsed)) {
-            const migrated = migrateData(parsed);
-            if (window.confirm(`Found ${migrated.length} records. This will REPLACE current data. Continue?`)) {
-                setDispatchData(migrated);
-                alert("Data restored successfully!");
-            }
-        } else {
-            alert("Invalid backup file format.");
+             if (window.confirm("Legacy backup found. Restore dispatch data?")) {
+                 setDispatchData(migrateData(parsed));
+             }
+        } else if (parsed.dispatch || parsed.challan) {
+             if (window.confirm("Restore data? This replaces current data.")) {
+                 if (parsed.dispatch) setDispatchData(migrateData(parsed.dispatch));
+                 if (parsed.challan) setChallanData(parsed.challan);
+             }
         }
       } catch (err) {
-        console.error(err);
         alert("Failed to parse backup file.");
       }
     };
     reader.readAsText(file);
-    // Reset input
     event.target.value = '';
   };
 
   const renderView = () => {
-    if (userRole === 'user') {
+    if (currentView === AppView.CHALLAN) {
+        return <ChallanView data={challanData} onAdd={handleAddChallan} onDelete={handleDeleteChallan} />;
+    }
+
+    if (userRole === 'user' && currentView === AppView.ENTRY) {
       return (
         <DispatchEntryView 
           entries={dispatchData}
