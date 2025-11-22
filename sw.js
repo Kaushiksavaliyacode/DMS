@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'rdms-v21';
+const CACHE_NAME = 'rdms-v22';
 const urlsToCache = [
   '/',
   '/index.html',

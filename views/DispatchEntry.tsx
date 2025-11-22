@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
-import { DispatchEntry, DispatchStatus, MOCK_PARTIES } from '../types';
-import { Plus, RotateCcw, CheckCircle2, Trash2, Send, Ruler, User, Package, Scale, Pencil, Save, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { DispatchEntry, DispatchStatus, MOCK_PARTIES, ChallanEntry } from '../types';
+import { Plus, RotateCcw, CheckCircle2, Trash2, Send, Ruler, User, Package, Scale, Pencil, Save, X, ScrollText, Receipt } from 'lucide-react';
+import { ChallanView } from './Challan';
 
 interface DispatchEntryProps {
   entries: DispatchEntry[];
@@ -10,12 +11,21 @@ interface DispatchEntryProps {
   onDeleteEntry: (id: string) => void;
   onBulkDelete: (ids: string[]) => void;
   onBulkStatusUpdate: (ids: string[], status: DispatchStatus) => void;
+  
+  // Challan props
+  challanData?: ChallanEntry[];
+  onAddChallan?: (entry: any) => void;
+  onDeleteChallan?: (id: string) => void;
 }
 
 export const DispatchEntryView: React.FC<DispatchEntryProps> = ({ 
-    entries, onAddEntry, onUpdateEntry, onDeleteEntry 
+    entries, onAddEntry, onUpdateEntry, onDeleteEntry,
+    challanData = [], onAddChallan, onDeleteChallan
 }) => {
-  // --- State ---
+  // --- Tab State ---
+  const [activeTab, setActiveTab] = useState<'dispatch' | 'challan'>('dispatch');
+
+  // --- Dispatch State ---
   const [formData, setFormData] = useState({
     partyName: '',
     size: '',
@@ -138,8 +148,31 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
 
   const isMMSize = formData.size.toLowerCase().includes('mm');
   
-  // Show newest entries first
+  // Grouping Logic for Job List
   const sortedEntries = [...entries].sort((a, b) => b.timestamp - a.timestamp);
+  const groupedEntries = useMemo(() => {
+      const groups = new Map<string, DispatchEntry[]>();
+      sortedEntries.forEach(entry => {
+          const key = `${entry.date}|${entry.partyName}`;
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key)?.push(entry);
+      });
+      return Array.from(groups.entries());
+  }, [sortedEntries]);
+
+  if (activeTab === 'challan' && onAddChallan && onDeleteChallan) {
+      return (
+        <div className="max-w-7xl mx-auto">
+             <div className="flex justify-center mb-6">
+                <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 inline-flex">
+                    <button onClick={() => setActiveTab('dispatch')} className="px-4 py-2 text-sm font-bold text-slate-500 rounded-lg hover:bg-slate-50">Job Entry</button>
+                    <button onClick={() => setActiveTab('challan')} className="px-4 py-2 text-sm font-bold bg-indigo-600 text-white rounded-lg shadow-md">Challan Book</button>
+                </div>
+            </div>
+            <ChallanView data={challanData} onAdd={onAddChallan} onDelete={onDeleteChallan} />
+        </div>
+      );
+  }
 
   return (
     <div className="max-w-7xl mx-auto pb-20 grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -149,6 +182,18 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                 <span className="font-bold text-sm">{notification.message}</span>
             </div>
         )}
+
+        {/* Tab Switcher (Mobile/Top) */}
+        <div className="lg:col-span-12 flex justify-center">
+             <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 inline-flex">
+                <button onClick={() => setActiveTab('dispatch')} className="px-6 py-2 text-sm font-bold bg-indigo-600 text-white rounded-lg shadow-md flex items-center gap-2">
+                    <ScrollText className="w-4 h-4" /> Job Entry
+                </button>
+                <button onClick={() => setActiveTab('challan')} className="px-6 py-2 text-sm font-bold text-slate-500 rounded-lg hover:bg-slate-50 flex items-center gap-2">
+                    <Receipt className="w-4 h-4" /> Challan Book
+                </button>
+             </div>
+        </div>
 
         {/* Form Section */}
         <div className="lg:col-span-4 space-y-6">
@@ -244,55 +289,58 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
              </div>
         </div>
 
-        {/* List Section */}
+        {/* List Section - Grouped */}
         <div className="lg:col-span-8 h-full flex flex-col">
              <div className="flex items-center justify-between mb-4">
                  <h3 className="font-bold text-slate-700">Job List</h3>
                  <span className="bg-slate-200 text-slate-600 px-2 py-1 rounded-full text-xs font-bold">{sortedEntries.length} Total</span>
              </div>
              
-             <div className="space-y-3">
-                 {sortedEntries.length === 0 ? (
+             <div className="space-y-4">
+                 {groupedEntries.length === 0 ? (
                      <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
                          <Package className="w-12 h-12 text-slate-200 mx-auto mb-3" />
                          <p className="text-slate-400 text-sm">No jobs found. Add your first entry.</p>
                      </div>
                  ) : (
-                     sortedEntries.map(entry => (
-                         <div key={entry.id} className={`bg-white p-5 rounded-xl shadow-sm border transition-all group relative ${editingId === entry.id ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/30' : 'border-slate-100 hover:border-indigo-200'}`}>
-                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                 <div className="flex-1">
-                                     <div className="flex items-center gap-2 mb-1">
-                                         <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{entry.date}</span>
-                                         <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${entry.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : entry.status === 'running' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>{entry.status}</span>
-                                     </div>
-                                     <h4 className="font-bold text-slate-900 text-lg">{entry.partyName}</h4>
-                                     <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
-                                        <div>
-                                            <span className="text-[10px] text-slate-400 uppercase font-bold block">Size</span>
-                                            <span className="font-bold text-slate-700">{entry.size}</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-[10px] text-slate-400 uppercase font-bold block">Rolls</span>
-                                            <span className="font-bold text-slate-700">{entry.bundle} 📦</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-[10px] text-slate-400 uppercase font-bold block">Weight</span>
-                                            <span className="font-bold text-slate-700">{entry.weight} kg</span>
-                                        </div>
-                                     </div>
+                     groupedEntries.map(([key, items]) => {
+                         const [date, party] = key.split('|');
+                         return (
+                             <div key={key} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                                 <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                                      <div className="flex items-center gap-3">
+                                          <span className="text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded text-slate-500">{date}</span>
+                                          <h4 className="font-bold text-slate-800">{party}</h4>
+                                      </div>
+                                      <span className="text-xs font-bold text-slate-400">{items.length} Entries</span>
                                  </div>
                                  
-                                 <div className="flex items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 border-slate-100 pt-3 md:pt-0 mt-2 md:mt-0">
-                                     {entry.status === 'completed' && (
-                                         <button onClick={() => sendWhatsApp(entry)} className="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors" title="Share WhatsApp"><Send className="w-4 h-4" /></button>
-                                     )}
-                                     <button onClick={() => handleEditClick(entry)} className="p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors" title="Edit"><Pencil className="w-4 h-4" /></button>
-                                     <button onClick={() => onDeleteEntry(entry.id)} className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                                 <div className="p-2 space-y-2">
+                                     {items.map(entry => (
+                                         <div key={entry.id} className={`p-3 rounded-lg border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${editingId === entry.id ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
+                                             <div className="flex-1">
+                                                 <div className="flex gap-2 mb-1">
+                                                     <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${entry.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : entry.status === 'running' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {entry.status}
+                                                     </span>
+                                                 </div>
+                                                 <div className="flex flex-wrap gap-4 text-sm items-center">
+                                                     <div className="w-20"><span className="text-[10px] font-bold text-slate-400 uppercase block">Size</span><span className="font-bold text-slate-700">{entry.size}</span></div>
+                                                     <div className="w-20"><span className="text-[10px] font-bold text-slate-400 uppercase block">Rolls</span><span className="font-bold text-slate-700">{entry.bundle} 📦</span></div>
+                                                     <div className="w-24"><span className="text-[10px] font-bold text-slate-400 uppercase block">Weight</span><span className="font-bold text-slate-700">{entry.weight} kg</span></div>
+                                                 </div>
+                                             </div>
+                                             <div className="flex items-center gap-1 justify-end">
+                                                 {entry.status === 'completed' && <button onClick={() => sendWhatsApp(entry)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Send className="w-4 h-4" /></button>}
+                                                 <button onClick={() => handleEditClick(entry)} className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><Pencil className="w-4 h-4" /></button>
+                                                 <button onClick={() => onDeleteEntry(entry.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                                             </div>
+                                         </div>
+                                     ))}
                                  </div>
                              </div>
-                         </div>
-                     ))
+                         );
+                     })
                  )}
              </div>
         </div>

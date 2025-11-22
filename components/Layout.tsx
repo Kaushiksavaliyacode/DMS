@@ -1,6 +1,6 @@
 
 import React, { ReactNode, useRef } from 'react';
-import { LayoutDashboard, Box, LogOut, Download, Upload, Shield, User, Menu, X, Receipt, ScrollText } from 'lucide-react';
+import { LayoutDashboard, Box, LogOut, Download, Upload, Shield, User, Menu, X } from 'lucide-react';
 import { AppView, UserRole } from '../types';
 
 interface LayoutProps {
@@ -55,16 +55,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
              </div>
           </div>
 
-          {/* Center: Navigation */}
+          {/* Center: Navigation (Admin Only) */}
           <div className="hidden md:flex items-center bg-slate-100/50 p-1 rounded-2xl border border-slate-200/50">
-             {userRole === 'admin' ? (
+             {userRole === 'admin' && (
                  <NavTab view={AppView.DASHBOARD} label="Dashboard" icon={LayoutDashboard} />
-             ) : (
-                 <>
-                    <NavTab view={AppView.ENTRY} label="Dispatch Entry" icon={ScrollText} />
-                    <NavTab view={AppView.CHALLAN} label="Challan" icon={Receipt} />
-                 </>
              )}
+             {/* User has no top nav, everything is in the dashboard */}
           </div>
 
           {/* Right: Actions & Logout */}
@@ -131,19 +127,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
            </div>
 
            <div className="space-y-2">
-             {userRole === 'admin' ? (
+             {userRole === 'admin' && (
                  <button onClick={() => { setView(AppView.DASHBOARD); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 text-slate-700 font-semibold">
                     <LayoutDashboard className="w-5 h-5" /> Dashboard
                  </button>
-             ) : (
-                 <>
-                    <button onClick={() => { setView(AppView.ENTRY); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 text-slate-700 font-semibold">
-                        <ScrollText className="w-5 h-5" /> Dispatch Entry
-                    </button>
-                    <button onClick={() => { setView(AppView.CHALLAN); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 rounded-xl bg-slate-50 text-slate-700 font-semibold">
-                        <Receipt className="w-5 h-5" /> Challan
-                    </button>
-                 </>
              )}
              
              {userRole === 'admin' && (

@@ -28,6 +28,7 @@ export interface ChallanEntry {
   date: string;
   partyName: string;
   paymentType: 'debit' | 'cash';
+  challanType: 'sales' | 'jobwork'; // New field
   items: ChallanItem[];
   grandTotal: number;
   timestamp: number;

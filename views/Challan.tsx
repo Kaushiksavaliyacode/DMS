@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChallanEntry, ChallanItem, MOCK_PARTIES } from '../types';
-import { Plus, Trash2, IndianRupee, Receipt, Save, RotateCcw, User } from 'lucide-react';
+import { Plus, Trash2, IndianRupee, Receipt, Save, RotateCcw, User, Briefcase } from 'lucide-react';
 
 interface ChallanProps {
   data: ChallanEntry[];
@@ -15,6 +15,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete }) =
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [partyName, setPartyName] = useState('');
   const [paymentType, setPaymentType] = useState<'debit' | 'cash'>('debit');
+  const [challanType, setChallanType] = useState<'sales' | 'jobwork'>('sales');
   const [items, setItems] = useState<ChallanItem[]>([]);
   
   // State for new item entry
@@ -28,17 +29,19 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete }) =
   // Summary Stats
   const summary = useMemo(() => {
       return data.reduce((acc, curr) => ({
-          receivable: acc.receivable + (curr.paymentType === 'debit' ? curr.grandTotal : 0),
-          received: acc.received + (curr.paymentType === 'cash' ? curr.grandTotal : 0),
+          receivable: acc.receivable + (curr.paymentType === 'debit' && curr.challanType === 'sales' ? curr.grandTotal : 0),
+          received: acc.received + (curr.paymentType === 'cash' && curr.challanType === 'sales' ? curr.grandTotal : 0),
           count: acc.count + 1
       }), { receivable: 0, received: 0, count: 0 });
   }, [data]);
 
   // --- Handlers ---
   const addItem = () => {
-      if (!itemSize || !itemWeight || !itemPrice) return;
+      if (!itemSize || !itemWeight) return;
+      if (challanType === 'sales' && !itemPrice) return;
+
       const weight = parseFloat(itemWeight);
-      const price = parseFloat(itemPrice);
+      const price = challanType === 'sales' ? parseFloat(itemPrice) : 0;
       const newItem: ChallanItem = {
           id: crypto.randomUUID(),
           size: itemSize,
@@ -67,6 +70,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete }) =
           date,
           partyName,
           paymentType,
+          challanType,
           items,
           grandTotal
       });
@@ -75,6 +79,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete }) =
       setPartyName('');
       setItems([]);
       setPaymentType('debit');
+      setChallanType('sales');
   };
 
   return (
@@ -127,11 +132,21 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete }) =
                              </div>
                          </div>
 
-                         <div>
-                             <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Payment Mode</label>
-                             <div className="flex bg-slate-100 p-1 rounded-xl">
-                                 <button type="button" onClick={() => setPaymentType('debit')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${paymentType === 'debit' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400'}`}>Debit (Receivable)</button>
-                                 <button type="button" onClick={() => setPaymentType('cash')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${paymentType === 'cash' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}>Cash (Received)</button>
+                        {/* Challan Type & Payment Mode */}
+                         <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Bill Type</label>
+                                <div className="flex bg-slate-100 p-1 rounded-xl">
+                                    <button type="button" onClick={() => setChallanType('sales')} className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${challanType === 'sales' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}>Invoice</button>
+                                    <button type="button" onClick={() => setChallanType('jobwork')} className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${challanType === 'jobwork' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-400'}`}>Job Work</button>
+                                </div>
+                            </div>
+                             <div>
+                                 <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Payment Mode</label>
+                                 <div className="flex bg-slate-100 p-1 rounded-xl">
+                                     <button type="button" onClick={() => setPaymentType('debit')} className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${paymentType === 'debit' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400'}`}>Debit</button>
+                                     <button type="button" onClick={() => setPaymentType('cash')} className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${paymentType === 'cash' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400'}`}>Cash</button>
+                                 </div>
                              </div>
                          </div>
 
@@ -140,7 +155,11 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete }) =
                              <div className="grid grid-cols-3 gap-2 mb-2">
                                  <input placeholder="Size (Text)" value={itemSize} onChange={e => setItemSize(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none" />
                                  <input type="number" placeholder="Weight" value={itemWeight} onChange={e => setItemWeight(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none" />
-                                 <input type="number" placeholder="Price" value={itemPrice} onChange={e => setItemPrice(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                                 {challanType === 'sales' ? (
+                                    <input type="number" placeholder="Price" value={itemPrice} onChange={e => setItemPrice(e.target.value)} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none" />
+                                 ) : (
+                                    <div className="px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold text-slate-400 flex items-center justify-center">No Price</div>
+                                 )}
                              </div>
                              <button type="button" onClick={addItem} className="w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center justify-center gap-1">
                                  <Plus className="w-3 h-3" /> Add Item
@@ -154,7 +173,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete }) =
                                      <div key={item.id} className="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
                                          <div>
                                              <div className="text-xs font-bold text-slate-800">{item.size}</div>
-                                             <div className="text-[10px] text-slate-500">{item.weight} kg x ₹{item.price}</div>
+                                             <div className="text-[10px] text-slate-500">{item.weight} kg {item.price > 0 ? `x ₹${item.price}` : '(Job Work)'}</div>
                                          </div>
                                          <div className="flex items-center gap-3">
                                              <div className="text-xs font-bold text-slate-800">₹{item.total.toFixed(2)}</div>
@@ -165,10 +184,12 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete }) =
                              </div>
                          )}
 
-                         <div className="flex justify-between items-center pt-2">
-                             <span className="font-bold text-slate-500 text-sm">Grand Total</span>
-                             <span className="text-xl font-bold text-slate-900">₹ {grandTotal.toLocaleString()}</span>
-                         </div>
+                         {challanType === 'sales' && (
+                             <div className="flex justify-between items-center pt-2">
+                                 <span className="font-bold text-slate-500 text-sm">Grand Total</span>
+                                 <span className="text-xl font-bold text-slate-900">₹ {grandTotal.toLocaleString()}</span>
+                             </div>
+                         )}
 
                          <div className="flex gap-3 pt-2">
                              <button type="button" onClick={() => { setItems([]); setChallanNo(''); }} className="p-3 text-slate-400 hover:bg-slate-50 rounded-xl border border-slate-200"><RotateCcw className="w-5 h-5" /></button>
@@ -198,6 +219,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete }) =
                                             <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold">{challan.date}</span>
                                             <span className="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold">#{challan.challanNo || 'NA'}</span>
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${challan.paymentType === 'cash' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{challan.paymentType}</span>
+                                            {challan.challanType === 'jobwork' && <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-100 text-purple-700">Job Work</span>}
                                         </div>
                                         <h4 className="font-bold text-slate-900 text-lg">{challan.partyName}</h4>
                                     </div>

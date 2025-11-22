@@ -29,6 +29,14 @@ const migrateData = (data: any[]): DispatchEntry[] => {
   }));
 };
 
+const migrateChallan = (data: any[]): ChallanEntry[] => {
+    if (!Array.isArray(data)) return [];
+    return data.map(item => ({
+        ...item,
+        challanType: item.challanType || 'sales'
+    }));
+};
+
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('admin'); 
@@ -56,7 +64,7 @@ const App: React.FC = () => {
     try {
       if (typeof window !== 'undefined') {
         const savedData = localStorage.getItem(CHALLAN_STORAGE_KEY);
-        if (savedData) return JSON.parse(savedData);
+        if (savedData) return migrateChallan(JSON.parse(savedData));
       }
     } catch (e) {
       console.error("Failed to load challan data", e);
@@ -108,11 +116,12 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       if (userRole === 'user') {
-        if (currentView !== AppView.ENTRY && currentView !== AppView.CHALLAN) {
+        // Users default to ENTRY which contains both jobs and challan
+        if (currentView !== AppView.ENTRY) {
              setCurrentView(AppView.ENTRY);
         }
       } else {
-        setCurrentView(AppView.DASHBOARD);
+        if (currentView === AppView.ENTRY) setCurrentView(AppView.DASHBOARD);
       }
     }
   }, [userRole, isAuthenticated]);
@@ -205,7 +214,7 @@ const App: React.FC = () => {
         } else if (parsed.dispatch || parsed.challan) {
              if (window.confirm("Restore data? This replaces current data.")) {
                  if (parsed.dispatch) setDispatchData(migrateData(parsed.dispatch));
-                 if (parsed.challan) setChallanData(parsed.challan);
+                 if (parsed.challan) setChallanData(migrateChallan(parsed.challan));
              }
         }
       } catch (err) {
@@ -218,6 +227,7 @@ const App: React.FC = () => {
 
   const renderView = () => {
     if (currentView === AppView.CHALLAN) {
+        // For admin direct view of Challans if we kept it (optional, currently not linked in layout for admin)
         return <ChallanView data={challanData} onAdd={handleAddChallan} onDelete={handleDeleteChallan} />;
     }
 
@@ -230,6 +240,10 @@ const App: React.FC = () => {
           onDeleteEntry={handleDeleteEntry}
           onBulkDelete={handleBulkDelete}
           onBulkStatusUpdate={handleBulkStatusUpdate}
+          // Challan Props
+          challanData={challanData}
+          onAddChallan={handleAddChallan}
+          onDeleteChallan={handleDeleteChallan}
         />
       );
     }

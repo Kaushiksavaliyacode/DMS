@@ -1,9 +1,10 @@
 
 import React, { useMemo, useState } from 'react';
-import { DispatchEntry } from '../types';
+import { DispatchEntry, DispatchStatus } from '../types';
 import { 
   Search, ArrowUpDown, ArrowUp, ArrowDown, 
-  Package, Scale, TrendingUp, Layers, Calendar, Filter, XCircle, ChevronLeft, ChevronRight, Table as TableIcon
+  Package, Scale, TrendingUp, Layers, Calendar, Filter, XCircle, ChevronLeft, ChevronRight, Table as TableIcon,
+  CheckCircle2, Clock, PlayCircle
 } from 'lucide-react';
 import { 
   Tooltip, ResponsiveContainer, 
@@ -24,12 +25,15 @@ interface FilterState {
   endDate: string;
 }
 
+type StatusFilter = 'all' | DispatchStatus;
+
 // --- Calendar Helpers ---
 const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
 export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
   const [viewMode, setViewMode] = useState<'stats' | 'calendar'>('stats');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [filters, setFilters] = useState<FilterState>({ party: '', size: '', startDate: '', endDate: '' });
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'timestamp', direction: 'desc' });
   
@@ -46,6 +50,10 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
       if (viewMode === 'calendar' && selectedDate) {
           return entry.date === selectedDate;
       }
+      
+      // Status Filter
+      if (statusFilter !== 'all' && entry.status !== statusFilter) return false;
+
       const matchesParty = filters.party ? entry.partyName === filters.party : true;
       const matchesSize = filters.size ? entry.size === filters.size : true;
       let matchesDate = true;
@@ -53,7 +61,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
       if (filters.endDate) matchesDate = matchesDate && entry.date <= filters.endDate;
       return matchesParty && matchesSize && matchesDate;
     });
-  }, [data, filters, viewMode, selectedDate]);
+  }, [data, filters, viewMode, selectedDate, statusFilter]);
 
   const sortedData = useMemo(() => {
     if (!sortConfig) return filteredData;
@@ -65,6 +73,17 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
       return 0;
     });
   }, [filteredData, sortConfig]);
+
+  // --- Grouping Logic for Table ---
+  const groupedData = useMemo(() => {
+    const groups = new Map<string, DispatchEntry[]>();
+    sortedData.forEach(entry => {
+        const key = `${entry.date}|${entry.partyName}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)?.push(entry);
+    });
+    return Array.from(groups.entries());
+  }, [sortedData]);
 
   const totals = useMemo(() => {
     // Calculate totals based on ALL data for KPIs, unless filtered
@@ -97,21 +116,19 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
   }, [data]);
 
   // --- Actions ---
-  const handleSort = (key: SortKey) => {
-    setSortConfig(current => {
-      if (current?.key === key) return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
-      return { key, direction: 'desc' }; 
-    });
-  };
   const clearFilters = () => setFilters({ party: '', size: '', startDate: '', endDate: '' });
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
 
   // --- Components ---
-  const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
-    if (sortConfig?.key !== columnKey) return <ArrowUpDown className="w-3 h-3 text-slate-300 ml-1" />;
-    return sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3 text-indigo-600 ml-1" /> : <ArrowDown className="w-3 h-3 text-indigo-600 ml-1" />;
-  };
+  const StatusTab = ({ id, label, icon: Icon }: { id: StatusFilter, label: string, icon: any }) => (
+      <button 
+        onClick={() => setStatusFilter(id)}
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === id ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-200'}`}
+      >
+          <Icon className="w-3.5 h-3.5" /> {label}
+      </button>
+  );
 
   const KPICard = ({ title, value, sub, icon: Icon, colorClass, bgClass }: any) => (
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col justify-between h-full relative overflow-hidden group">
@@ -135,7 +152,6 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
       const daysCount = getDaysInMonth(year, month);
       const startDay = getFirstDayOfMonth(year, month);
       
-      // Map data to dates
       const entriesMap = new Map<string, number>();
       data.forEach(d => entriesMap.set(d.date, (entriesMap.get(d.date) || 0) + 1));
 
@@ -145,7 +161,6 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
           const dateStr = `${year}-${String(month+1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
           const count = entriesMap.get(dateStr) || 0;
           const isSelected = selectedDate === dateStr;
-          
           days.push(
               <button 
                 key={d} 
@@ -228,12 +243,21 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
         <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden ${viewMode === 'calendar' ? 'lg:col-span-8' : 'lg:col-span-12'}`}>
             {/* Toolbar */}
             <div className="p-4 border-b border-slate-100 bg-white flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
-                <div className="flex items-center gap-3">
-                    <div className="bg-indigo-50 p-2 rounded-lg"><Search className="w-5 h-5 text-indigo-600" /></div>
-                    <h2 className="text-lg font-bold text-slate-800">
-                        {viewMode === 'calendar' ? (selectedDate ? `Entries for ${selectedDate}` : 'Select a date') : 'All Transactions'}
-                    </h2>
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-lg font-bold text-slate-800">
+                            {viewMode === 'calendar' ? (selectedDate ? `Entries for ${selectedDate}` : 'Select a date') : 'Transactions'}
+                        </h2>
+                    </div>
+                    {/* Status Filters */}
+                    <div className="flex gap-2">
+                        <StatusTab id="all" label="All" icon={Layers} />
+                        <StatusTab id="pending" label="Pending" icon={Clock} />
+                        <StatusTab id="running" label="Running" icon={PlayCircle} />
+                        <StatusTab id="completed" label="Completed" icon={CheckCircle2} />
+                    </div>
                 </div>
+                
                 {viewMode === 'stats' && (
                     <div className="flex flex-wrap gap-3 w-full lg:w-auto items-center">
                         <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
@@ -253,48 +277,68 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
             </div>
 
             {/* Table */}
-            <div className="flex-1 overflow-auto">
-                {sortedData.length === 0 ? (
+            <div className="flex-1 overflow-auto bg-slate-50/50">
+                {groupedData.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-400 min-h-[200px]">
                         <Package className="w-12 h-12 mb-3 text-slate-200" />
                         <p className="text-sm font-medium">No records found</p>
                     </div>
                 ) : (
-                    <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm border-b border-slate-200">
-                            <tr>
-                                {[
-                                    { label: 'Date', key: 'date', width: 'w-[15%]', className: 'pl-6' },
-                                    { label: 'Party Name', key: 'partyName', width: 'w-[20%]' },
-                                    { label: 'Size', key: 'size', width: 'w-[15%]' },
-                                    { label: 'Rolls', key: 'bundle', width: 'w-[10%]', align: 'center' },
-                                    { label: 'Pcs', key: 'pcs', width: 'w-[10%]', align: 'center' },
-                                    { label: 'Disp. Wt', key: 'weight', width: 'w-[15%]', align: 'right' },
-                                    { label: 'Status', key: 'status', width: 'w-[10%]', align: 'center', className: 'pr-6' },
-                                ].map((col) => (
-                                    <th key={col.key} onClick={() => handleSort(col.key as SortKey)} className={`py-4 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer hover:text-indigo-600 transition-colors select-none ${col.width} ${col.className || ''} ${col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}`}>
-                                        <div className={`flex items-center gap-1 ${col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : 'justify-start'}`}>{col.label}<SortIcon columnKey={col.key as SortKey} /></div>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {sortedData.map((entry) => {
-                                const isMM = entry.size.toLowerCase().includes('mm');
-                                return (
-                                    <tr key={entry.id} className="hover:bg-slate-50/80 transition-colors group">
-                                        <td className="py-3.5 px-4 pl-6 align-middle text-sm font-medium text-slate-500 font-mono">{entry.date}</td>
-                                        <td className="py-3.5 px-4 align-middle"><div className="font-bold text-slate-900 text-sm truncate" title={entry.partyName}>{entry.partyName}</div></td>
-                                        <td className="py-3.5 px-4 align-middle"><span className="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">{entry.size}</span></td>
-                                        <td className="py-3.5 px-4 text-center align-middle"><span className="font-bold text-slate-700 text-sm">{entry.bundle ? `${entry.bundle} 📦` : '-'}</span></td>
-                                        <td className="py-3.5 px-4 text-center align-middle">{isMM ? <span className="text-[10px] font-bold text-white bg-indigo-500 px-2 py-0.5 rounded-full">Rolls</span> : <span className="font-bold text-slate-700 text-sm">{entry.pcs || '-'}</span>}</td>
-                                        <td className="py-3.5 px-4 text-right align-middle"><span className="font-bold text-indigo-600 text-sm">{entry.weight > 0 ? `${entry.weight.toLocaleString()} kg` : '-'}</span></td>
-                                        <td className="py-3.5 px-4 pr-6 text-center align-middle"><div className={`w-2.5 h-2.5 rounded-full mx-auto ${entry.status === 'completed' ? 'bg-emerald-400' : entry.status === 'running' ? 'bg-blue-400' : 'bg-amber-400'}`} title={entry.status} /></td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                    <div className="p-4 space-y-4">
+                        {groupedData.map(([groupKey, items]) => {
+                            const [date, partyName] = groupKey.split('|');
+                            return (
+                                <div key={groupKey} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                    {/* Group Header */}
+                                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded text-slate-600">{date}</div>
+                                            <h3 className="font-bold text-slate-800 text-sm">{partyName}</h3>
+                                        </div>
+                                        <div className="text-xs font-bold text-slate-500">
+                                            {items.length} Entries
+                                        </div>
+                                    </div>
+                                    {/* Items Table */}
+                                    <table className="w-full text-left">
+                                        <thead className="bg-white text-[10px] uppercase text-slate-400 border-b border-slate-100">
+                                            <tr>
+                                                <th className="px-4 py-2 font-bold w-[20%]">Size</th>
+                                                <th className="px-4 py-2 font-bold text-center w-[15%]">Rolls</th>
+                                                <th className="px-4 py-2 font-bold text-center w-[15%]">Pcs</th>
+                                                <th className="px-4 py-2 font-bold text-right w-[20%]">Weight</th>
+                                                <th className="px-4 py-2 font-bold text-center w-[30%]">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-xs font-bold text-slate-700 divide-y divide-slate-50">
+                                            {items.map(entry => {
+                                                const isMM = entry.size.toLowerCase().includes('mm');
+                                                return (
+                                                    <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors">
+                                                        <td className="px-4 py-2.5">{entry.size}</td>
+                                                        <td className="px-4 py-2.5 text-center">{entry.bundle} 📦</td>
+                                                        <td className="px-4 py-2.5 text-center">
+                                                            {isMM ? <span className="text-[9px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded">ROLLS</span> : entry.pcs}
+                                                        </td>
+                                                        <td className="px-4 py-2.5 text-right text-indigo-600">{entry.weight} kg</td>
+                                                        <td className="px-4 py-2.5 text-center">
+                                                             <span className={`inline-block px-2 py-0.5 rounded text-[10px] uppercase ${
+                                                                entry.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
+                                                                entry.status === 'running' ? 'bg-blue-50 text-blue-600' : 
+                                                                'bg-amber-50 text-amber-600'
+                                                             }`}>
+                                                                {entry.status}
+                                                             </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
         </div>
