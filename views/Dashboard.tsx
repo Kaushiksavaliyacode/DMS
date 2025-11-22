@@ -1,8 +1,6 @@
-
 import React, { useMemo, useState } from 'react';
 import { DispatchEntry, DispatchStatus } from '../types';
 import { 
-  Search, ArrowUpDown, ArrowUp, ArrowDown, 
   Package, Scale, TrendingUp, Layers, Calendar, Filter, XCircle, ChevronLeft, ChevronRight, Table as TableIcon,
   CheckCircle2, Clock, PlayCircle
 } from 'lucide-react';
@@ -35,7 +33,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
   const [viewMode, setViewMode] = useState<'stats' | 'calendar'>('stats');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [filters, setFilters] = useState<FilterState>({ party: '', size: '', startDate: '', endDate: '' });
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'timestamp', direction: 'desc' });
+  const [sortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>({ key: 'timestamp', direction: 'desc' });
   
   // Calendar State
   const [currentDate, setCurrentDate] = useState(new Date());
