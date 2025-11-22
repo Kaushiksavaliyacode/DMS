@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChallanEntry, ChallanItem, MOCK_PARTIES } from '../types';
-import { Plus, Trash2, IndianRupee, Calculator, Receipt, Save, RotateCcw, CheckCircle2, User } from 'lucide-react';
+import { Plus, Trash2, IndianRupee, Receipt, Save, RotateCcw, User } from 'lucide-react';
 
 interface ChallanProps {
   data: ChallanEntry[];

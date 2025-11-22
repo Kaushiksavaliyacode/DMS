@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { DispatchEntry } from '../types';
 import { 
   Search, ArrowUpDown, ArrowUp, ArrowDown, 
-  Package, Scale, TrendingUp, Layers, Calendar, Filter, XCircle, ChevronLeft, ChevronRight, LayoutGrid, Table as TableIcon
+  Package, Scale, TrendingUp, Layers, Calendar, Filter, XCircle, ChevronLeft, ChevronRight, Table as TableIcon
 } from 'lucide-react';
 import { 
   Tooltip, ResponsiveContainer, 
@@ -134,7 +134,6 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
       const month = currentDate.getMonth();
       const daysCount = getDaysInMonth(year, month);
       const startDay = getFirstDayOfMonth(year, month);
-      const todayStr = new Date().toISOString().split('T')[0];
       
       // Map data to dates
       const entriesMap = new Map<string, number>();
