@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { DispatchEntry, DispatchStatus } from '../types';
 import { 
@@ -248,7 +249,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                         </h2>
                     </div>
                     {/* Status Filters */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <StatusTab id="all" label="All" icon={Layers} />
                         <StatusTab id="pending" label="Pending" icon={Clock} />
                         <StatusTab id="running" label="Running" icon={PlayCircle} />
@@ -274,7 +275,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                 )}
             </div>
 
-            {/* Table */}
+            {/* Table/List View */}
             <div className="flex-1 overflow-auto bg-slate-50/50">
                 {groupedData.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-400 min-h-[200px]">
@@ -297,8 +298,9 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                                             {items.length} Entries
                                         </div>
                                     </div>
-                                    {/* Items Table */}
-                                    <table className="w-full text-left">
+                                    
+                                    {/* Desktop Table */}
+                                    <table className="w-full text-left hidden md:table">
                                         <thead className="bg-white text-[10px] uppercase text-slate-400 border-b border-slate-100">
                                             <tr>
                                                 <th className="px-4 py-2 font-bold w-[20%]">Size</th>
@@ -333,6 +335,38 @@ export const DashboardView: React.FC<DashboardProps> = ({ data }) => {
                                             })}
                                         </tbody>
                                     </table>
+
+                                    {/* Mobile List View (Fixes Overlapping) */}
+                                    <div className="md:hidden divide-y divide-slate-100">
+                                        {items.map(entry => {
+                                             const isMM = entry.size.toLowerCase().includes('mm');
+                                             return (
+                                                 <div key={entry.id} className="p-3 flex flex-col gap-2">
+                                                     <div className="flex justify-between items-start">
+                                                         <div className="font-bold text-slate-800 text-sm">{entry.size}</div>
+                                                         <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                                                            entry.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
+                                                            entry.status === 'running' ? 'bg-blue-50 text-blue-600' : 
+                                                            'bg-amber-50 text-amber-600'
+                                                         }`}>
+                                                            {entry.status}
+                                                         </span>
+                                                     </div>
+                                                     <div className="grid grid-cols-3 gap-2 text-xs font-bold text-slate-600">
+                                                         <div className="bg-slate-50 p-1.5 rounded text-center">
+                                                             {entry.bundle} 📦
+                                                         </div>
+                                                         <div className="bg-slate-50 p-1.5 rounded text-center">
+                                                             {isMM ? 'ROLLS' : `${entry.pcs} Pcs`}
+                                                         </div>
+                                                         <div className="bg-indigo-50 text-indigo-600 p-1.5 rounded text-center">
+                                                             {entry.weight} kg
+                                                         </div>
+                                                     </div>
+                                                 </div>
+                                             );
+                                        })}
+                                    </div>
                                 </div>
                             );
                         })}

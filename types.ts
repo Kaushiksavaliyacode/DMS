@@ -22,13 +22,16 @@ export interface ChallanItem {
   total: number;
 }
 
+export type ChallanType = 'invoice' | 'jobwork' | 'credit_note' | 'debit_note';
+export type PaymentType = 'credit' | 'cash';
+
 export interface ChallanEntry {
   id: string;
   challanNo: string;
   date: string;
   partyName: string;
-  paymentType: 'debit' | 'cash';
-  challanType: 'sales' | 'jobwork'; // New field
+  paymentType: PaymentType;
+  challanType: ChallanType;
   items: ChallanItem[];
   grandTotal: number;
   timestamp: number;

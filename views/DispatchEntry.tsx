@@ -212,65 +212,77 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                      </div>
                  )}
 
-                 <form onSubmit={handleSubmit} className="space-y-4">
+                 <form onSubmit={handleSubmit} className="space-y-5">
+                     {/* Date */}
                      <div className="relative">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase absolute -top-2 left-2 bg-white px-1 z-10">Date</label>
-                        <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full pl-4 pr-4 py-3 bg-slate-50 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all border border-transparent focus:border-indigo-500" />
+                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Date</label>
+                        <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all border border-transparent focus:border-indigo-500" />
                      </div>
 
-                     <div className="relative">
-                         <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                         <input list="parties" name="partyName" value={formData.partyName} onChange={e => setFormData({...formData, partyName: e.target.value})} placeholder="Select Party" className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all border border-transparent focus:border-indigo-500" />
-                         <datalist id="parties">{availableParties.map(p => <option key={p} value={p} />)}</datalist>
+                     {/* Party */}
+                     <div>
+                         <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Party Name</label>
+                         <div className="relative">
+                             <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                             <input list="parties" name="partyName" value={formData.partyName} onChange={e => setFormData({...formData, partyName: e.target.value})} placeholder="Select Party" className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all border border-transparent focus:border-indigo-500" />
+                             <datalist id="parties">{availableParties.map(p => <option key={p} value={p} />)}</datalist>
+                         </div>
                      </div>
                      
-                     <div className="relative">
-                         <Ruler className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                         <input type="text" name="size" value={formData.size} onChange={e => {
-                             const val = e.target.value;
-                             setFormData(prev => ({ ...prev, size: val, pcs: val.toLowerCase().includes('mm') ? prev.bundle.toString() : prev.pcs }));
-                         }} placeholder="Size (e.g. 12mm)" className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all border border-transparent focus:border-indigo-500" />
+                     {/* Size */}
+                     <div>
+                         <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Size</label>
+                         <div className="relative">
+                             <Ruler className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                             <input type="text" name="size" value={formData.size} onChange={e => {
+                                 const val = e.target.value;
+                                 setFormData(prev => ({ ...prev, size: val, pcs: val.toLowerCase().includes('mm') ? prev.bundle.toString() : prev.pcs }));
+                             }} placeholder="Size (e.g. 12mm)" className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all border border-transparent focus:border-indigo-500" />
+                         </div>
                      </div>
 
-                     <div className="grid grid-cols-2 gap-3">
-                         <div className="relative group">
-                             <label className="text-[10px] font-bold text-slate-400 uppercase absolute -top-2 left-2 bg-white px-1">Bundles</label>
+                     <div className="grid grid-cols-2 gap-4">
+                         <div>
+                             <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Bundles</label>
                              <div className="relative">
-                                <Package className="absolute left-3 top-3 w-3.5 h-3.5 text-slate-400" />
+                                <Package className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
                                 <input type="number" name="bundle" value={formData.bundle} onChange={e => {
                                     const val = e.target.value;
                                     setFormData(prev => ({ ...prev, bundle: val, pcs: isMMSize ? val : prev.pcs }));
-                                }} className="w-full pl-8 pr-3 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500" placeholder="0" />
+                                }} className="w-full pl-10 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:bg-white" placeholder="0" />
                              </div>
                          </div>
-                         <div className="relative group">
-                             <label className="text-[10px] font-bold text-slate-400 uppercase absolute -top-2 left-2 bg-white px-1">Weight</label>
+                         <div>
+                             <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Weight</label>
                              <div className="relative">
-                                <Scale className="absolute left-3 top-3 w-3.5 h-3.5 text-slate-400" />
-                                <input type="number" step="0.01" name="weight" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} className="w-full pl-8 px-3 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500" placeholder="0.00" />
+                                <Scale className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                                <input type="number" step="0.01" name="weight" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} className="w-full pl-10 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:bg-white" placeholder="0.00" />
                              </div>
                          </div>
                      </div>
 
                      {!isMMSize && (
-                        <div className="relative group">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase absolute -top-2 left-2 bg-white px-1">Pcs</label>
-                            <input type="number" name="pcs" value={formData.pcs} onChange={e => setFormData({...formData, pcs: e.target.value})} className="w-full px-3 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500" placeholder="0" />
+                        <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Total Pcs</label>
+                            <input type="number" name="pcs" value={formData.pcs} onChange={e => setFormData({...formData, pcs: e.target.value})} className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:bg-white" placeholder="0" />
                         </div>
                      )}
 
                      {/* Status Selection */}
-                     <div className="flex bg-slate-100 p-1 rounded-xl">
-                         {['pending', 'running', 'completed'].map(s => (
-                             <button 
-                                  key={s} 
-                                  type="button" 
-                                  onClick={() => setFormData({...formData, status: s as DispatchStatus})}
-                                  className={`flex-1 py-2 text-xs font-bold uppercase rounded-lg transition-all ${formData.status === s ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                             >
-                                 {s}
-                             </button>
-                         ))}
+                     <div>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status</label>
+                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                             {['pending', 'running', 'completed'].map(s => (
+                                 <button 
+                                      key={s} 
+                                      type="button" 
+                                      onClick={() => setFormData({...formData, status: s as DispatchStatus})}
+                                      className={`flex-1 py-2.5 text-xs font-bold uppercase rounded-lg transition-all ${formData.status === s ? 'bg-white shadow-sm text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                 >
+                                     {s}
+                                 </button>
+                             ))}
+                        </div>
                      </div>
 
                      <div className="flex gap-3 pt-2">
@@ -317,23 +329,37 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                                  
                                  <div className="p-2 space-y-2">
                                      {items.map(entry => (
-                                         <div key={entry.id} className={`p-3 rounded-lg border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${editingId === entry.id ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
-                                             <div className="flex-1">
-                                                 <div className="flex gap-2 mb-1">
+                                         <div key={entry.id} className={`p-3 rounded-lg border transition-all flex flex-col gap-3 ${editingId === entry.id ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
+                                             <div className="flex justify-between items-start">
+                                                 <div className="flex gap-2">
                                                      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${entry.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : entry.status === 'running' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
                                                         {entry.status}
                                                      </span>
                                                  </div>
-                                                 <div className="flex flex-wrap gap-4 text-sm items-center">
-                                                     <div className="w-20"><span className="text-[10px] font-bold text-slate-400 uppercase block">Size</span><span className="font-bold text-slate-700">{entry.size}</span></div>
-                                                     <div className="w-20"><span className="text-[10px] font-bold text-slate-400 uppercase block">Rolls</span><span className="font-bold text-slate-700">{entry.bundle} 📦</span></div>
-                                                     <div className="w-24"><span className="text-[10px] font-bold text-slate-400 uppercase block">Weight</span><span className="font-bold text-slate-700">{entry.weight} kg</span></div>
+                                                 <div className="flex items-center gap-1">
+                                                     {entry.status === 'completed' && <button onClick={() => sendWhatsApp(entry)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Send className="w-4 h-4" /></button>}
+                                                     <button onClick={() => handleEditClick(entry)} className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><Pencil className="w-4 h-4" /></button>
+                                                     <button onClick={() => onDeleteEntry(entry.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                                                  </div>
                                              </div>
-                                             <div className="flex items-center gap-1 justify-end">
-                                                 {entry.status === 'completed' && <button onClick={() => sendWhatsApp(entry)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Send className="w-4 h-4" /></button>}
-                                                 <button onClick={() => handleEditClick(entry)} className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><Pencil className="w-4 h-4" /></button>
-                                                 <button onClick={() => onDeleteEntry(entry.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                                             
+                                             <div className="grid grid-cols-3 gap-2 text-sm">
+                                                 <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase block">Size</span>
+                                                    <span className="font-bold text-slate-800">{entry.size}</span>
+                                                 </div>
+                                                 <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase block">Rolls</span>
+                                                    <span className="font-bold text-slate-800">{entry.bundle} 📦</span>
+                                                 </div>
+                                                 <div className="bg-indigo-50 p-2 rounded border border-indigo-100 text-center">
+                                                    <span className="text-[9px] font-bold text-indigo-400 uppercase block">Weight</span>
+                                                    <span className="font-bold text-indigo-700">{entry.weight} kg</span>
+                                                 </div>
+                                                 <div className="bg-slate-50 p-2 rounded border border-slate-100 col-span-3 sm:col-span-1">
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase block">Pcs</span>
+                                                    <span className="font-bold text-slate-800">{entry.pcs || '-'}</span>
+                                                 </div>
                                              </div>
                                          </div>
                                      ))}
