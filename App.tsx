@@ -227,7 +227,6 @@ const App: React.FC = () => {
 
   const renderView = () => {
     if (currentView === AppView.CHALLAN) {
-        // For admin direct view of Challans if we kept it (optional, currently not linked in layout for admin)
         return <ChallanView data={challanData} onAdd={handleAddChallan} onDelete={handleDeleteChallan} />;
     }
 
@@ -250,11 +249,11 @@ const App: React.FC = () => {
 
     switch (currentView) {
       case AppView.DASHBOARD:
-        return <DashboardView data={dispatchData} />;
+        return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} />;
       case AppView.ANALYTICS:
         return <AnalyticsView data={dispatchData} />;
       default:
-        return <DashboardView data={dispatchData} />;
+        return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} />;
     }
   };
 
