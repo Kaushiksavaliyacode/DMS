@@ -6,11 +6,95 @@ import { DashboardView } from './views/Dashboard';
 import { AnalyticsView } from './views/Analytics';
 import { ChallanView } from './views/Challan';
 import { LoginView } from './views/Login';
-import { AppView, DispatchEntry, ChallanEntry, UserRole } from './types';
+import { AppView, DispatchEntry, ChallanEntry, UserRole, MOCK_PARTIES, DispatchStatus, PaymentType, ChallanType } from './types';
 
 const LOCAL_STORAGE_KEY = 'dispatch_pro_data';
 const CHALLAN_STORAGE_KEY = 'dispatch_pro_challan';
 const AUTH_STORAGE_KEY = 'dispatch_pro_auth';
+
+// --- Mock Data Generators ---
+const generateMockDispatch = (): DispatchEntry[] => {
+  const entries: DispatchEntry[] = [];
+  const sizes = ['12x12', '14x14', '100mm', '150mm', '200x100', 'Standard'];
+  const statuses: DispatchStatus[] = ['pending', 'running', 'completed'];
+
+  for (let i = 0; i < 20; i++) {
+    const isMM = Math.random() > 0.5;
+    const size = sizes[Math.floor(Math.random() * sizes.length)];
+    const weight = Math.floor(Math.random() * 2000) + 100;
+    const bundle = Math.floor(Math.random() * 50) + 1;
+    // Generate date within last 30 days
+    const date = new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+
+    entries.push({
+      id: crypto.randomUUID(),
+      date,
+      partyName: MOCK_PARTIES[Math.floor(Math.random() * MOCK_PARTIES.length)],
+      size,
+      weight,
+      productionWeight: weight + (Math.random() * 50), 
+      pcs: isMM ? 0 : bundle * (Math.floor(Math.random() * 10) + 1),
+      bundle,
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      timestamp: Date.now() - (i * 1000000) // Stagger timestamps
+    });
+  }
+  return entries.sort((a, b) => b.timestamp - a.timestamp);
+};
+
+const generateMockChallan = (): ChallanEntry[] => {
+  const entries: ChallanEntry[] = [];
+  const sizes = ['12x12', '14x14', '100mm', '150mm'];
+
+  for (let i = 0; i < 20; i++) {
+    const date = new Date(Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+    const typeRandom = Math.random();
+    let paymentType: PaymentType = 'credit';
+    let challanType: ChallanType = 'debit_note';
+
+    if (typeRandom < 0.33) {
+      paymentType = 'cash';
+      challanType = 'debit_note';
+    } else if (typeRandom < 0.66) {
+      paymentType = 'credit';
+      challanType = 'jobwork';
+    } else {
+      paymentType = 'credit';
+      challanType = 'debit_note';
+    }
+
+    const items = [];
+    const numItems = Math.floor(Math.random() * 3) + 1;
+    let grandTotal = 0;
+
+    for (let j = 0; j < numItems; j++) {
+      const weight = Math.floor(Math.random() * 500) + 10;
+      const price = challanType === 'jobwork' ? 0 : Math.floor(Math.random() * 50) + 100;
+      const total = weight * price;
+      grandTotal += total;
+      items.push({
+        id: crypto.randomUUID(),
+        size: sizes[Math.floor(Math.random() * sizes.length)],
+        weight,
+        price,
+        total
+      });
+    }
+
+    entries.push({
+      id: crypto.randomUUID(),
+      challanNo: (1000 + i).toString(),
+      date,
+      partyName: MOCK_PARTIES[Math.floor(Math.random() * MOCK_PARTIES.length)],
+      paymentType,
+      challanType,
+      items,
+      grandTotal,
+      timestamp: Date.now() - (i * 1000000)
+    });
+  }
+  return entries.sort((a, b) => b.timestamp - a.timestamp);
+};
 
 // Helper to ensure old data formats don't crash the new app
 const migrateData = (data: any[]): DispatchEntry[] => {
@@ -50,13 +134,16 @@ const App: React.FC = () => {
         const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
         if (savedData) {
           const parsed = JSON.parse(savedData);
-          return migrateData(parsed);
+          const migrated = migrateData(parsed);
+          // Auto-seed if empty
+          if (migrated.length === 0) return generateMockDispatch();
+          return migrated;
         }
       }
     } catch (e) {
       console.error("Failed to load data from storage", e);
     }
-    return [];
+    return generateMockDispatch();
   });
 
   // --- Challan Data State ---
@@ -64,12 +151,17 @@ const App: React.FC = () => {
     try {
       if (typeof window !== 'undefined') {
         const savedData = localStorage.getItem(CHALLAN_STORAGE_KEY);
-        if (savedData) return migrateChallan(JSON.parse(savedData));
+        if (savedData) {
+           const parsed = JSON.parse(savedData);
+           const migrated = migrateChallan(parsed);
+           if (migrated.length === 0) return generateMockChallan();
+           return migrated;
+        }
       }
     } catch (e) {
       console.error("Failed to load challan data", e);
     }
-    return [];
+    return generateMockChallan();
   });
 
   useEffect(() => {
@@ -233,7 +325,6 @@ const App: React.FC = () => {
 
   const renderView = () => {
     if (currentView === AppView.CHALLAN) {
-        // Technically not reachable with current logic but kept for safety
         return <ChallanView data={challanData} onAdd={handleAddChallan} onUpdate={handleUpdateChallan} onDelete={handleDeleteChallan} />;
     }
 
