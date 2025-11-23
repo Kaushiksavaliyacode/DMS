@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { DispatchEntryView } from './views/DispatchEntry';
@@ -29,27 +30,21 @@ const App: React.FC = () => {
   const [challanData, setChallanData] = useState<ChallanEntry[]>([]);
 
   // --- Firebase Subscriptions ---
-  // This replaces all LocalStorage logic. 
-  // When data changes on the server (by any user), these hooks update the state instantly.
   useEffect(() => {
-    // Subscribe to Jobs/Dispatch
     const unsubscribeDispatch = subscribeToDispatch((data) => {
       setDispatchData(data);
     });
 
-    // Subscribe to Challans
     const unsubscribeChallan = subscribeToChallan((data) => {
       setChallanData(data);
     });
 
-    // Cleanup listeners on unmount
     return () => {
       unsubscribeDispatch();
       unsubscribeChallan();
     };
   }, []);
 
-  // Auth Persistence (Local only, simple auth for now)
   useEffect(() => {
     const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
     if (savedAuth) {
@@ -65,7 +60,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // View switching default
   useEffect(() => {
     if (isAuthenticated) {
       if (userRole === 'user') {
@@ -90,49 +84,59 @@ const App: React.FC = () => {
   };
 
   // --- Dispatch Actions (Connected to Firebase) ---
-  const handleAddEntry = (entry: Omit<DispatchEntry, 'id' | 'timestamp'>) => {
-    // We don't need to manually update state here; Firebase listener will do it
-    addDispatchToFire({
+  const handleAddEntry = async (entry: Omit<DispatchEntry, 'id' | 'timestamp'>) => {
+    await addDispatchToFire({
       ...entry,
       timestamp: Date.now()
     });
   };
 
-  const handleUpdateEntry = (id: string, updates: Partial<DispatchEntry>) => {
-    updateDispatchInFire(id, updates);
+  const handleUpdateEntry = async (id: string, updates: Partial<DispatchEntry>) => {
+    await updateDispatchInFire(id, updates);
   };
 
-  const handleDeleteEntry = (id: string) => {
-    deleteDispatchFromFire(id);
+  const handleDeleteEntry = async (id: string) => {
+    await deleteDispatchFromFire(id);
   };
   
   const handleBulkDelete = (ids: string[]) => {
      if (window.confirm(`Are you sure you want to delete ${ids.length} items?`)) {
-        ids.forEach(id => deleteDispatchFromFire(id));
+        ids.forEach(async (id) => {
+            try {
+                await deleteDispatchFromFire(id);
+            } catch (e) {
+                console.error("Bulk delete error", e);
+            }
+        });
      }
   };
 
   const handleBulkStatusUpdate = (ids: string[], status: any) => { 
-      ids.forEach(id => updateDispatchInFire(id, { status }));
+      ids.forEach(async (id) => {
+          try {
+              await updateDispatchInFire(id, { status });
+          } catch (e) {
+              console.error("Bulk update error", e);
+          }
+      });
   };
 
   // --- Challan Actions (Connected to Firebase) ---
-  const handleAddChallan = (entry: Omit<ChallanEntry, 'id' | 'timestamp'>) => {
-      addChallanToFire({
+  const handleAddChallan = async (entry: Omit<ChallanEntry, 'id' | 'timestamp'>) => {
+      await addChallanToFire({
           ...entry,
           timestamp: Date.now()
       });
   };
 
-  const handleUpdateChallan = (id: string, updates: Partial<ChallanEntry>) => {
-      updateChallanInFire(id, updates);
+  const handleUpdateChallan = async (id: string, updates: Partial<ChallanEntry>) => {
+      await updateChallanInFire(id, updates);
   };
 
-  const handleDeleteChallan = (id: string) => {
-      deleteChallanFromFire(id);
+  const handleDeleteChallan = async (id: string) => {
+      await deleteChallanFromFire(id);
   };
 
-  // --- Export/Import (Optional now with Cloud Sync, but kept for backup) ---
   const handleExportData = () => {
     const exportObj = { dispatch: dispatchData, challan: challanData };
     const dataStr = JSON.stringify(exportObj, null, 2);
@@ -148,8 +152,7 @@ const App: React.FC = () => {
   };
 
   const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
-    alert("Import is disabled in Cloud Mode to prevent overwriting live data accidentally.");
-    // In a real app, you would parse and loop through to `addDoc` for each item
+    alert("Import is disabled in Cloud Mode.");
   };
 
   const renderView = () => {
@@ -166,7 +169,6 @@ const App: React.FC = () => {
           onDeleteEntry={handleDeleteEntry}
           onBulkDelete={handleBulkDelete}
           onBulkStatusUpdate={handleBulkStatusUpdate}
-          // Challan Props
           challanData={challanData}
           onAddChallan={handleAddChallan}
           onUpdateChallan={handleUpdateChallan}

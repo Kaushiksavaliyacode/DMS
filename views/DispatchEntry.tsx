@@ -1,22 +1,22 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { DispatchEntry, DispatchStatus, MOCK_PARTIES, ChallanEntry } from '../types';
-import { Plus, RotateCcw, CheckCircle2, Trash2, Send, Ruler, User, Package, Scale, Pencil, Save, X, ScrollText, Receipt } from 'lucide-react';
+import { Plus, RotateCcw, CheckCircle2, Trash2, Send, Ruler, User, Package, Scale, Pencil, Save, X, ScrollText, Receipt, AlertCircle } from 'lucide-react';
 import { ChallanView } from './Challan';
 
 interface DispatchEntryProps {
   entries: DispatchEntry[];
-  onAddEntry: (entry: Omit<DispatchEntry, 'id' | 'timestamp'>) => void;
-  onUpdateEntry: (id: string, updates: Partial<DispatchEntry>) => void;
-  onDeleteEntry: (id: string) => void;
+  onAddEntry: (entry: Omit<DispatchEntry, 'id' | 'timestamp'>) => Promise<void> | void;
+  onUpdateEntry: (id: string, updates: Partial<DispatchEntry>) => Promise<void> | void;
+  onDeleteEntry: (id: string) => Promise<void> | void;
   onBulkDelete: (ids: string[]) => void;
   onBulkStatusUpdate: (ids: string[], status: DispatchStatus) => void;
   
   // Challan props
   challanData?: ChallanEntry[];
-  onAddChallan?: (entry: any) => void;
-  onUpdateChallan?: (id: string, entry: any) => void;
-  onDeleteChallan?: (id: string) => void;
+  onAddChallan?: (entry: any) => Promise<void> | void;
+  onUpdateChallan?: (id: string, entry: any) => Promise<void> | void;
+  onDeleteChallan?: (id: string) => Promise<void> | void;
 }
 
 export const DispatchEntryView: React.FC<DispatchEntryProps> = ({ 
@@ -25,6 +25,7 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
 }) => {
   // --- Tab State ---
   const [activeTab, setActiveTab] = useState<'dispatch' | 'challan'>('dispatch');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- Dispatch State ---
   const [formData, setFormData] = useState({
@@ -94,7 +95,7 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
       }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.partyName || !formData.size) {
       setNotification({ type: 'error', message: "Party & Size required" });
@@ -120,26 +121,34 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
       status: formData.status
     };
 
-    if (editingId) {
-        onUpdateEntry(editingId, entryData);
-        setNotification({ type: 'success', message: "Job updated successfully" });
-        setEditingId(null);
-    } else {
-        onAddEntry(entryData);
-        setNotification({ type: 'success', message: "Added successfully" });
+    setIsSubmitting(true);
+    try {
+        if (editingId) {
+            await onUpdateEntry(editingId, entryData);
+            setNotification({ type: 'success', message: "Job updated successfully" });
+            setEditingId(null);
+        } else {
+            await onAddEntry(entryData);
+            setNotification({ type: 'success', message: "Added successfully" });
+        }
+        
+        // Reset form only on success
+        setFormData(prev => ({
+            ...prev,
+            weight: '',
+            productionWeight: '',
+            pcs: '',
+            bundle: '',
+            status: 'pending'
+        }));
+    } catch (error: any) {
+        console.error("Save failed:", error);
+        setNotification({ type: 'error', message: `Failed to save: ${error.message || 'Unknown error'}` });
+        alert(`Error: ${error.message || 'Check your internet or Firebase permissions.'}`);
+    } finally {
+        setIsSubmitting(false);
+        setTimeout(() => setNotification(null), 3000);
     }
-
-    setTimeout(() => setNotification(null), 2000);
-    
-    // Reset form 
-    setFormData(prev => ({
-        ...prev,
-        weight: '',
-        productionWeight: '',
-        pcs: '',
-        bundle: '',
-        status: 'pending'
-    }));
   };
 
   // Bulk WhatsApp Function
@@ -195,7 +204,7 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
     <div className="max-w-7xl mx-auto pb-20 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {notification && (
             <div className={`fixed top-4 right-4 z-[100] px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 animate-in slide-in-from-top-5 ${notification.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
-                {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
+                {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                 <span className="font-bold text-sm">{notification.message}</span>
             </div>
         )}
@@ -309,8 +318,12 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                              <button type="button" onClick={() => setFormData({partyName: '', size: '', weight: '', productionWeight: '', pcs: '', bundle: '', date: new Date().toISOString().split('T')[0], status: 'pending'})} className="p-3 text-slate-400 hover:bg-slate-50 rounded-xl"><RotateCcw className="w-5 h-5" /></button>
                          )}
                          
-                         <button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                             {editingId ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />} 
+                         <button 
+                            type="submit" 
+                            disabled={isSubmitting}
+                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70"
+                        >
+                             {isSubmitting ? <span className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span> : (editingId ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />)} 
                              {editingId ? 'Update Job' : 'Add Entry'}
                          </button>
                      </div>
@@ -334,7 +347,6 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                  ) : (
                      groupedEntries.map(([key, items]) => {
                          const [date, party] = key.split('|');
-                         // Calculate total bundles for this group
                          const totalBundles = items.reduce((sum, item) => sum + item.bundle, 0);
 
                          return (

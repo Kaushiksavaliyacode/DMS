@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   addDoc, 
@@ -22,32 +23,23 @@ export const subscribeToDispatch = (callback: (data: DispatchEntry[]) => void) =
       ...doc.data()
     })) as DispatchEntry[];
     callback(data);
+  }, (error) => {
+    console.error("Dispatch subscription error:", error);
   });
 };
 
 export const addDispatchToFire = async (entry: Omit<DispatchEntry, 'id'>) => {
-  try {
-    await addDoc(collection(db, "dispatch"), entry);
-  } catch (e) {
-    console.error("Error adding dispatch: ", e);
-  }
+  // Errors will bubble up to the caller
+  await addDoc(collection(db, "dispatch"), entry);
 };
 
 export const updateDispatchInFire = async (id: string, updates: Partial<DispatchEntry>) => {
-  try {
-    const ref = doc(db, "dispatch", id);
-    await updateDoc(ref, updates);
-  } catch (e) {
-    console.error("Error updating dispatch: ", e);
-  }
+  const ref = doc(db, "dispatch", id);
+  await updateDoc(ref, updates);
 };
 
 export const deleteDispatchFromFire = async (id: string) => {
-  try {
-    await deleteDoc(doc(db, "dispatch", id));
-  } catch (e) {
-    console.error("Error deleting dispatch: ", e);
-  }
+  await deleteDoc(doc(db, "dispatch", id));
 };
 
 // --- Challan Entries ---
@@ -60,30 +52,20 @@ export const subscribeToChallan = (callback: (data: ChallanEntry[]) => void) => 
       ...doc.data()
     })) as ChallanEntry[];
     callback(data);
+  }, (error) => {
+    console.error("Challan subscription error:", error);
   });
 };
 
 export const addChallanToFire = async (entry: Omit<ChallanEntry, 'id'>) => {
-  try {
-    await addDoc(collection(db, "challans"), entry);
-  } catch (e) {
-    console.error("Error adding challan: ", e);
-  }
+  await addDoc(collection(db, "challans"), entry);
 };
 
 export const updateChallanInFire = async (id: string, updates: Partial<ChallanEntry>) => {
-  try {
-    const ref = doc(db, "challans", id);
-    await updateDoc(ref, updates);
-  } catch (e) {
-    console.error("Error updating challan: ", e);
-  }
+  const ref = doc(db, "challans", id);
+  await updateDoc(ref, updates);
 };
 
 export const deleteChallanFromFire = async (id: string) => {
-  try {
-    await deleteDoc(doc(db, "challans", id));
-  } catch (e) {
-    console.error("Error deleting challan: ", e);
-  }
+  await deleteDoc(doc(db, "challans", id));
 };
