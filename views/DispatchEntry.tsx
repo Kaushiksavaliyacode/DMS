@@ -15,12 +15,13 @@ interface DispatchEntryProps {
   // Challan props
   challanData?: ChallanEntry[];
   onAddChallan?: (entry: any) => void;
+  onUpdateChallan?: (id: string, entry: any) => void;
   onDeleteChallan?: (id: string) => void;
 }
 
 export const DispatchEntryView: React.FC<DispatchEntryProps> = ({ 
     entries, onAddEntry, onUpdateEntry, onDeleteEntry,
-    challanData = [], onAddChallan, onDeleteChallan
+    challanData = [], onAddChallan, onUpdateChallan, onDeleteChallan
 }) => {
   // --- Tab State ---
   const [activeTab, setActiveTab] = useState<'dispatch' | 'challan'>('dispatch');
@@ -166,10 +167,10 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
              <div className="flex justify-center mb-6">
                 <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 inline-flex">
                     <button onClick={() => setActiveTab('dispatch')} className="px-4 py-2 text-sm font-bold text-slate-500 rounded-lg hover:bg-slate-50">Job Entry</button>
-                    <button onClick={() => setActiveTab('challan')} className="px-4 py-2 text-sm font-bold bg-indigo-600 text-white rounded-lg shadow-md">Challan Book</button>
+                    <button onClick={() => setActiveTab('challan')} className="px-4 py-2 text-sm font-bold bg-indigo-600 text-white rounded-lg shadow-md">Transaction Book</button>
                 </div>
             </div>
-            <ChallanView data={challanData} onAdd={onAddChallan} onDelete={onDeleteChallan} />
+            <ChallanView data={challanData} onAdd={onAddChallan} onUpdate={onUpdateChallan} onDelete={onDeleteChallan} />
         </div>
       );
   }
@@ -190,7 +191,7 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                     <ScrollText className="w-4 h-4" /> Job Entry
                 </button>
                 <button onClick={() => setActiveTab('challan')} className="px-6 py-2 text-sm font-bold text-slate-500 rounded-lg hover:bg-slate-50 flex items-center gap-2">
-                    <Receipt className="w-4 h-4" /> Challan Book
+                    <Receipt className="w-4 h-4" /> Transaction Book
                 </button>
              </div>
         </div>

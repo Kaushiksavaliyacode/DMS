@@ -1,11 +1,12 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChallanEntry, ChallanItem, MOCK_PARTIES, PaymentType, ChallanType } from '../types';
-import { Plus, Trash2, IndianRupee, Receipt, Save, RotateCcw, User, Calendar, Filter, ChevronDown, ChevronRight, FileText, CheckCircle2, Clock } from 'lucide-react';
+import { Plus, Trash2, IndianRupee, Receipt, Save, RotateCcw, User, Filter, ChevronDown, ChevronRight, FileText, CheckCircle2, Clock, Pencil, X } from 'lucide-react';
 
 interface ChallanProps {
   data: ChallanEntry[];
   onAdd?: (entry: Omit<ChallanEntry, 'id' | 'timestamp'>) => void;
+  onUpdate?: (id: string, entry: Partial<ChallanEntry>) => void;
   onDelete: (id: string) => void;
   isAdmin?: boolean;
 }
@@ -13,8 +14,9 @@ interface ChallanProps {
 type FilterRange = 'today' | '7days' | '30days' | 'custom';
 type EntryMode = 'unpaid' | 'cash' | 'job';
 
-export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete, isAdmin = false }) => {
+export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onDelete, isAdmin = false }) => {
   // Form State
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [challanNo, setChallanNo] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [partyName, setPartyName] = useState('');
@@ -104,6 +106,36 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete, isA
 
   const removeItem = (id: string) => setItems(items.filter(i => i.id !== id));
 
+  const handleEdit = (entry: ChallanEntry) => {
+      setEditingId(entry.id);
+      setChallanNo(entry.challanNo);
+      setDate(entry.date);
+      setPartyName(entry.partyName);
+      setItems(entry.items);
+      
+      if (entry.paymentType === 'cash') {
+          setEntryMode('cash');
+      } else if (entry.challanType === 'jobwork') {
+          setEntryMode('job');
+      } else {
+          setEntryMode('unpaid');
+      }
+      
+      // Scroll to top if in mobile/split view
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const resetForm = () => {
+      setEditingId(null);
+      setChallanNo('');
+      setItems([]);
+      setPartyName('');
+      setEntryMode('unpaid');
+      setItemSize('');
+      setItemWeight('');
+      setItemPrice('');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (!partyName || items.length === 0) {
@@ -117,32 +149,32 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete, isA
 
       if (entryMode === 'cash') {
           pType = 'cash';
-          cType = 'debit_note'; // Normal bill, paid
+          cType = 'debit_note';
       } else if (entryMode === 'job') {
-          pType = 'credit'; // Doesn't matter really
+          pType = 'credit';
           cType = 'jobwork';
       } else {
-          // Unpaid
           pType = 'credit';
           cType = 'debit_note';
       }
 
-      if (onAdd) {
-          onAdd({
-              challanNo,
-              date,
-              partyName,
-              paymentType: pType,
-              challanType: cType,
-              items,
-              grandTotal
-          });
+      const entryData = {
+          challanNo,
+          date,
+          partyName,
+          paymentType: pType,
+          challanType: cType,
+          items,
+          grandTotal
+      };
+
+      if (editingId && onUpdate) {
+          onUpdate(editingId, entryData);
+      } else if (onAdd) {
+          onAdd(entryData);
       }
-      // Reset
-      setChallanNo('');
-      setItems([]);
-      setPartyName('');
-      setEntryMode('unpaid');
+      
+      resetForm();
   };
 
   return (
@@ -182,10 +214,18 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete, isA
             {/* Create Challan Form (Hidden for Admin) */}
             {!isAdmin && (
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-white rounded-xl shadow-md shadow-slate-200/50 border border-slate-200 overflow-hidden">
-                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center gap-2">
-                            <Receipt className="w-5 h-5 text-indigo-600" />
-                            <h3 className="font-bold text-slate-800">New Transaction</h3>
+                    <div className="bg-white rounded-xl shadow-md shadow-slate-200/50 border border-slate-200 overflow-hidden relative">
+                        {editingId && <div className="absolute top-0 left-0 w-full h-1 bg-amber-500 z-10"></div>}
+                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Receipt className="w-5 h-5 text-indigo-600" />
+                                <h3 className="font-bold text-slate-800">{editingId ? 'Edit Transaction' : 'New Transaction'}</h3>
+                            </div>
+                            {editingId && (
+                                <button onClick={resetForm} className="text-xs font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                                    <X className="w-3 h-3" /> Cancel
+                                </button>
+                            )}
                         </div>
 
                         <form onSubmit={handleSubmit} className="p-6 space-y-5">
@@ -213,13 +253,13 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete, isA
                             <div>
                                 <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Transaction Type</label>
                                 <div className="grid grid-cols-3 gap-2">
-                                    <button type="button" onClick={() => setEntryMode('unpaid')} className={`py-2 rounded-lg text-xs font-bold border transition-all ${entryMode === 'unpaid' ? 'bg-amber-50 border-amber-300 text-amber-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500'}`}>
+                                    <button type="button" onClick={() => setEntryMode('unpaid')} className={`py-2 rounded-lg text-xs font-bold border transition-all ${entryMode === 'unpaid' ? 'bg-red-50 border-red-300 text-red-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500'}`}>
                                         Unpaid
                                     </button>
                                     <button type="button" onClick={() => setEntryMode('cash')} className={`py-2 rounded-lg text-xs font-bold border transition-all ${entryMode === 'cash' ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500'}`}>
                                         Cash
                                     </button>
-                                    <button type="button" onClick={() => setEntryMode('job')} className={`py-2 rounded-lg text-xs font-bold border transition-all ${entryMode === 'job' ? 'bg-purple-50 border-purple-300 text-purple-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500'}`}>
+                                    <button type="button" onClick={() => setEntryMode('job')} className={`py-2 rounded-lg text-xs font-bold border transition-all ${entryMode === 'job' ? 'bg-slate-100 border-slate-300 text-slate-700 shadow-sm' : 'bg-white border-slate-200 text-slate-500'}`}>
                                         Job
                                     </button>
                                 </div>
@@ -262,7 +302,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete, isA
                             </div>
 
                             <button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
-                                <Save className="w-5 h-5" /> Save Record
+                                <Save className="w-5 h-5" /> {editingId ? 'Update' : 'Save'} Record
                             </button>
                         </form>
                     </div>
@@ -277,7 +317,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete, isA
                     <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-50/50">
                         <div className="flex items-center gap-2">
                              <Receipt className="w-5 h-5 text-slate-600" />
-                             <h3 className="font-bold text-slate-800">Challan Book</h3>
+                             <h3 className="font-bold text-slate-800">Transaction Book</h3>
                         </div>
                         
                         <div className="flex flex-wrap items-center gap-2">
@@ -292,89 +332,103 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onDelete, isA
                         </div>
                     </div>
 
-                    {/* Excel Style Table */}
+                    {/* Excel Style Table with Red/Green Rows */}
                     <div className="flex-1 overflow-auto">
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-slate-100 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 w-10"></th>
-                                    <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300">Date</th>
-                                    <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300">Challan #</th>
-                                    <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 w-1/3">Party Name</th>
-                                    <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 text-center">Type</th>
-                                    <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 text-center">Items</th>
-                                    <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 text-right">Total</th>
-                                    <th className="px-4 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-300 text-center">Action</th>
+                                    <th className="px-2 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 w-8"></th>
+                                    <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300">Challan #</th>
+                                    <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300">Date</th>
+                                    <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 w-1/3">Party Name</th>
+                                    <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 text-center">Type</th>
+                                    <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 text-right">Total</th>
+                                    <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-300 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white">
                                 {filteredData.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="text-center py-20 text-slate-400">
+                                        <td colSpan={7} className="text-center py-20 text-slate-400">
                                             No records found for selected period.
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredData.map((row) => (
-                                        <React.Fragment key={row.id}>
-                                            <tr className="hover:bg-blue-50/50 transition-colors border-b border-slate-200">
-                                                <td className="px-2 py-2 text-center border-r border-slate-200">
-                                                    <button onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)} className="p-1 hover:bg-slate-200 rounded text-slate-500">
-                                                        {expandedRow === row.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                                    </button>
-                                                </td>
-                                                <td className="px-4 py-2.5 text-xs font-bold text-slate-600 border-r border-slate-200 whitespace-nowrap">{row.date}</td>
-                                                <td className="px-4 py-2.5 text-xs font-bold text-slate-500 border-r border-slate-200">{row.challanNo || '-'}</td>
-                                                <td className="px-4 py-2.5 text-sm font-bold text-blue-700 border-r border-slate-200">{row.partyName}</td>
-                                                <td className="px-4 py-2.5 text-center border-r border-slate-200">
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${
-                                                        row.paymentType === 'cash' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                                        row.challanType === 'jobwork' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                                                        'bg-amber-50 text-amber-700 border-amber-200'
-                                                    }`}>
-                                                        {row.paymentType === 'cash' ? 'Cash' : row.challanType === 'jobwork' ? 'Job' : 'Unpaid'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-2.5 text-xs font-bold text-slate-600 text-center border-r border-slate-200">{row.items.length}</td>
-                                                <td className="px-4 py-2.5 text-sm font-bold text-slate-900 text-right border-r border-slate-200">
-                                                    {row.challanType === 'jobwork' ? '-' : `₹ ${row.grandTotal.toLocaleString()}`}
-                                                </td>
-                                                <td className="px-4 py-2.5 text-center">
-                                                    <button onClick={() => onDelete(row.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 className="w-4 h-4" /></button>
-                                                </td>
-                                            </tr>
-                                            
-                                            {/* Expanded Row for Items */}
-                                            {expandedRow === row.id && (
-                                                <tr className="bg-slate-50 border-b border-slate-200 shadow-inner">
-                                                    <td colSpan={8} className="px-10 py-4">
-                                                        <div className="bg-white border border-slate-300 rounded-lg overflow-hidden max-w-2xl">
-                                                            <table className="w-full text-left">
-                                                                <thead className="bg-slate-100 border-b border-slate-300">
-                                                                    <tr>
-                                                                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">Size</th>
-                                                                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase text-right">Weight</th>
-                                                                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase text-right">Price</th>
-                                                                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase text-right">Total</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {row.items.map((item, idx) => (
-                                                                        <tr key={idx} className="border-b border-slate-100 last:border-0">
-                                                                            <td className="px-4 py-2 text-xs font-bold text-slate-700">{item.size}</td>
-                                                                            <td className="px-4 py-2 text-xs font-bold text-slate-600 text-right">{item.weight} kg</td>
-                                                                            <td className="px-4 py-2 text-xs font-bold text-slate-600 text-right">{item.price > 0 ? `₹${item.price}` : '-'}</td>
-                                                                            <td className="px-4 py-2 text-xs font-bold text-slate-800 text-right">{item.total > 0 ? `₹${item.total}` : '-'}</td>
-                                                                        </tr>
-                                                                    ))}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
+                                    filteredData.map((row) => {
+                                        // Determine Row Style
+                                        let rowClass = "hover:bg-slate-50 transition-colors border-b border-slate-200";
+                                        if (row.paymentType === 'cash') {
+                                            rowClass = "bg-emerald-50/60 hover:bg-emerald-100 border-b border-emerald-200 border-l-4 border-l-emerald-500";
+                                        } else if (row.challanType === 'jobwork') {
+                                            rowClass = "bg-white hover:bg-slate-50 border-b border-slate-200 border-l-4 border-l-slate-400";
+                                        } else {
+                                            // Unpaid / Credit
+                                            rowClass = "bg-red-50/60 hover:bg-red-100 border-b border-red-200 border-l-4 border-l-red-500";
+                                        }
+
+                                        return (
+                                            <React.Fragment key={row.id}>
+                                                <tr className={rowClass}>
+                                                    <td className="px-2 py-2 text-center border-r border-slate-200/50">
+                                                        <button onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)} className="p-1 hover:bg-black/5 rounded text-slate-500">
+                                                            {expandedRow === row.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                                        </button>
+                                                    </td>
+                                                    <td className="px-3 py-2.5 text-xs font-bold text-slate-500 border-r border-slate-200/50">{row.challanNo || '-'}</td>
+                                                    <td className="px-3 py-2.5 text-xs font-bold text-slate-600 border-r border-slate-200/50 whitespace-nowrap">{row.date}</td>
+                                                    <td className="px-3 py-2.5 text-sm font-bold text-slate-800 border-r border-slate-200/50">{row.partyName}</td>
+                                                    <td className="px-3 py-2.5 text-center border-r border-slate-200/50">
+                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                                            row.paymentType === 'cash' ? 'text-emerald-700' :
+                                                            row.challanType === 'jobwork' ? 'text-slate-600' :
+                                                            'text-red-700'
+                                                        }`}>
+                                                            {row.paymentType === 'cash' ? 'CASH' : row.challanType === 'jobwork' ? 'JOB' : 'UNPAID'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3 py-2.5 text-sm font-bold text-slate-900 text-right border-r border-slate-200/50">
+                                                        {row.challanType === 'jobwork' ? '-' : `₹ ${row.grandTotal.toLocaleString()}`}
+                                                    </td>
+                                                    <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2">
+                                                        {!isAdmin && (
+                                                            <button onClick={() => handleEdit(row)} className="text-indigo-500 hover:text-indigo-700 p-1"><Pencil className="w-4 h-4" /></button>
+                                                        )}
+                                                        <button onClick={() => onDelete(row.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 className="w-4 h-4" /></button>
                                                     </td>
                                                 </tr>
-                                            )}
-                                        </React.Fragment>
-                                    ))
+                                                
+                                                {/* Expanded Row for Items */}
+                                                {expandedRow === row.id && (
+                                                    <tr className="bg-slate-50 border-b border-slate-200 shadow-inner">
+                                                        <td colSpan={7} className="px-4 py-4 md:px-10">
+                                                            <div className="bg-white border border-slate-300 rounded-lg overflow-hidden max-w-2xl">
+                                                                <table className="w-full text-left">
+                                                                    <thead className="bg-slate-100 border-b border-slate-300">
+                                                                        <tr>
+                                                                            <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase">Size</th>
+                                                                            <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase text-right">Weight</th>
+                                                                            <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase text-right">Price</th>
+                                                                            <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase text-right">Total</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {row.items.map((item, idx) => (
+                                                                            <tr key={idx} className="border-b border-slate-100 last:border-0">
+                                                                                <td className="px-4 py-2 text-xs font-bold text-slate-700">{item.size}</td>
+                                                                                <td className="px-4 py-2 text-xs font-bold text-slate-600 text-right">{item.weight} kg</td>
+                                                                                <td className="px-4 py-2 text-xs font-bold text-slate-600 text-right">{item.price > 0 ? `₹${item.price}` : '-'}</td>
+                                                                                <td className="px-4 py-2 text-xs font-bold text-slate-800 text-right">{item.total > 0 ? `₹${item.total}` : '-'}</td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>

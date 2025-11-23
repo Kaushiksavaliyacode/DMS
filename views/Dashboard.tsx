@@ -15,6 +15,7 @@ interface DashboardProps {
   data: DispatchEntry[];
   challanData: ChallanEntry[];
   onDeleteChallan: (id: string) => void;
+  onUpdateChallan?: (id: string, entry: any) => void;
 }
 
 type SortKey = keyof DispatchEntry;
@@ -33,7 +34,7 @@ type StatusFilter = 'all' | DispatchStatus;
 const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
-export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onDeleteChallan }) => {
+export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onDeleteChallan, onUpdateChallan }) => {
   const [dashboardMode, setDashboardMode] = useState<'production' | 'challan'>('production');
   const [viewMode, setViewMode] = useState<'stats' | 'calendar'>('stats');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -215,7 +216,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
       </div>
 
       {dashboardMode === 'challan' ? (
-          <ChallanView data={challanData} onDelete={onDeleteChallan} isAdmin={true} />
+          <ChallanView data={challanData} onDelete={onDeleteChallan} onUpdate={onUpdateChallan} isAdmin={true} />
       ) : (
         <>
             {/* KPI Section */}

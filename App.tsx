@@ -179,6 +179,12 @@ const App: React.FC = () => {
       setChallanData(prev => [newChallan, ...prev]);
   };
 
+  const handleUpdateChallan = (id: string, updates: Partial<ChallanEntry>) => {
+      setChallanData(prev => prev.map(item => 
+          item.id === id ? { ...item, ...updates } : item
+      ));
+  };
+
   const handleDeleteChallan = (id: string) => {
       setChallanData(prev => prev.filter(c => c.id !== id));
   };
@@ -227,7 +233,8 @@ const App: React.FC = () => {
 
   const renderView = () => {
     if (currentView === AppView.CHALLAN) {
-        return <ChallanView data={challanData} onAdd={handleAddChallan} onDelete={handleDeleteChallan} />;
+        // Technically not reachable with current logic but kept for safety
+        return <ChallanView data={challanData} onAdd={handleAddChallan} onUpdate={handleUpdateChallan} onDelete={handleDeleteChallan} />;
     }
 
     if (userRole === 'user' && currentView === AppView.ENTRY) {
@@ -242,6 +249,7 @@ const App: React.FC = () => {
           // Challan Props
           challanData={challanData}
           onAddChallan={handleAddChallan}
+          onUpdateChallan={handleUpdateChallan}
           onDeleteChallan={handleDeleteChallan}
         />
       );
@@ -249,11 +257,11 @@ const App: React.FC = () => {
 
     switch (currentView) {
       case AppView.DASHBOARD:
-        return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} />;
+        return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} onUpdateChallan={handleUpdateChallan} />;
       case AppView.ANALYTICS:
         return <AnalyticsView data={dispatchData} />;
       default:
-        return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} />;
+        return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} onUpdateChallan={handleUpdateChallan} />;
     }
   };
 
