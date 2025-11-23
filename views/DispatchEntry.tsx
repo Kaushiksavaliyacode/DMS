@@ -142,8 +142,24 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
     }));
   };
 
-  const sendWhatsApp = (entry: DispatchEntry) => {
-    const text = `*Order Update - ${entry.date}*%0A%0A*Party:* ${entry.partyName}%0A*Size:* ${entry.size}%0A*Weight:* ${entry.weight} kg%0A*Bundles:* ${entry.bundle} 📦`;
+  // Bulk WhatsApp Function
+  const sendBulkWhatsApp = (items: DispatchEntry[]) => {
+    if (items.length === 0) return;
+    const firstItem = items[0];
+    
+    let text = `*Job Work Update - ${firstItem.date}*%0A*Party:* ${firstItem.partyName}%0A%0A`;
+    let totalWt = 0;
+    let totalBdl = 0;
+
+    items.forEach(item => {
+        const wt = item.weight.toFixed(3);
+        text += `• ${item.size}: ${wt} kg | ${item.bundle} 📦%0A`;
+        totalWt += item.weight;
+        totalBdl += item.bundle;
+    });
+
+    text += `%0A*Total Weight:* ${totalWt.toFixed(3)} kg%0A*Total Bundles:* ${totalBdl} 📦`;
+    
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
 
@@ -257,7 +273,7 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Weight</label>
                              <div className="relative">
                                 <Scale className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                <input type="number" step="0.01" name="weight" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} className="w-full pl-10 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:bg-white" placeholder="0.00" />
+                                <input type="number" step="0.001" name="weight" value={formData.weight} onChange={e => setFormData({...formData, weight: e.target.value})} className="w-full pl-10 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-500 focus:bg-white" placeholder="0.000" />
                              </div>
                          </div>
                      </div>
@@ -318,14 +334,24 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                  ) : (
                      groupedEntries.map(([key, items]) => {
                          const [date, party] = key.split('|');
+                         // Calculate total bundles for this group
+                         const totalBundles = items.reduce((sum, item) => sum + item.bundle, 0);
+
                          return (
                              <div key={key} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                                  <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
                                       <div className="flex items-center gap-3">
                                           <span className="text-xs font-bold bg-white border border-slate-200 px-2 py-1 rounded text-slate-500">{date}</span>
                                           <h4 className="font-bold text-slate-800">{party}</h4>
+                                          <button 
+                                              onClick={() => sendBulkWhatsApp(items)} 
+                                              className="ml-2 text-emerald-600 hover:bg-emerald-100 p-1.5 rounded-lg transition-colors"
+                                              title="Send WhatsApp for all items"
+                                          >
+                                              <Send className="w-4 h-4" />
+                                          </button>
                                       </div>
-                                      <span className="text-xs font-bold text-slate-400">{items.length} Entries</span>
+                                      <span className="text-xs font-bold text-slate-600 bg-white border border-slate-200 px-2 py-1 rounded">Total Bundles: {totalBundles}</span>
                                  </div>
                                  
                                  <div className="p-2 space-y-2">
@@ -338,7 +364,6 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                                                      </span>
                                                  </div>
                                                  <div className="flex items-center gap-1">
-                                                     {entry.status === 'completed' && <button onClick={() => sendWhatsApp(entry)} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"><Send className="w-4 h-4" /></button>}
                                                      <button onClick={() => handleEditClick(entry)} className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg"><Pencil className="w-4 h-4" /></button>
                                                      <button onClick={() => onDeleteEntry(entry.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                                                  </div>
@@ -355,7 +380,7 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
                                                  </div>
                                                  <div className="bg-indigo-50 p-2 rounded border border-indigo-100 text-center">
                                                     <span className="text-[9px] font-bold text-indigo-400 uppercase block">Weight</span>
-                                                    <span className="font-bold text-indigo-700">{entry.weight} kg</span>
+                                                    <span className="font-bold text-indigo-700">{entry.weight.toFixed(3)} kg</span>
                                                  </div>
                                                  <div className="bg-slate-50 p-2 rounded border border-slate-100 col-span-3 sm:col-span-1">
                                                     <span className="text-[9px] font-bold text-slate-400 uppercase block">Pcs</span>
