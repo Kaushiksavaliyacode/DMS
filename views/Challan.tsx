@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChallanEntry, ChallanItem, MOCK_PARTIES, PaymentType, ChallanType } from '../types';
-import { Plus, Trash2, IndianRupee, Receipt, Save, RotateCcw, User, Filter, ChevronDown, ChevronRight, FileText, CheckCircle2, Clock, Pencil, X } from 'lucide-react';
+import { Plus, Trash2, IndianRupee, Receipt, Save, RotateCcw, User, Filter, X, FileText, CheckCircle2, Clock, Pencil } from 'lucide-react';
 
 interface ChallanProps {
   data: ChallanEntry[];
@@ -337,7 +337,6 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-slate-100 sticky top-0 z-10">
                                 <tr>
-                                    <th className="px-2 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 w-8"></th>
                                     <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300">Challan #</th>
                                     <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300">Date</th>
                                     <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 w-1/3">Party Name</th>
@@ -349,7 +348,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                             <tbody className="bg-white">
                                 {filteredData.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="text-center py-20 text-slate-400">
+                                        <td colSpan={6} className="text-center py-20 text-slate-400">
                                             No records found for selected period.
                                         </td>
                                     </tr>
@@ -368,12 +367,10 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
 
                                         return (
                                             <React.Fragment key={row.id}>
-                                                <tr className={rowClass}>
-                                                    <td className="px-2 py-2 text-center border-r border-slate-200/50">
-                                                        <button onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)} className="p-1 hover:bg-black/5 rounded text-slate-500">
-                                                            {expandedRow === row.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                                        </button>
-                                                    </td>
+                                                <tr 
+                                                    className={`${rowClass} cursor-pointer`} 
+                                                    onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)}
+                                                >
                                                     <td className="px-3 py-2.5 text-xs font-bold text-slate-500 border-r border-slate-200/50">{row.challanNo || '-'}</td>
                                                     <td className="px-3 py-2.5 text-xs font-bold text-slate-600 border-r border-slate-200/50 whitespace-nowrap">{row.date}</td>
                                                     <td className="px-3 py-2.5 text-sm font-bold text-slate-800 border-r border-slate-200/50">{row.partyName}</td>
@@ -389,7 +386,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                                     <td className="px-3 py-2.5 text-sm font-bold text-slate-900 text-right border-r border-slate-200/50">
                                                         {row.challanType === 'jobwork' ? '-' : `₹ ${row.grandTotal.toLocaleString()}`}
                                                     </td>
-                                                    <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2">
+                                                    <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
                                                         {!isAdmin && (
                                                             <button onClick={() => handleEdit(row)} className="text-indigo-500 hover:text-indigo-700 p-1"><Pencil className="w-4 h-4" /></button>
                                                         )}
@@ -400,7 +397,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                                 {/* Expanded Row for Items */}
                                                 {expandedRow === row.id && (
                                                     <tr className="bg-slate-50 border-b border-slate-200 shadow-inner">
-                                                        <td colSpan={7} className="px-4 py-4 md:px-10">
+                                                        <td colSpan={6} className="px-4 py-4 md:px-10">
                                                             <div className="bg-white border border-slate-300 rounded-lg overflow-hidden max-w-2xl">
                                                                 <table className="w-full text-left">
                                                                     <thead className="bg-slate-100 border-b border-slate-300">
