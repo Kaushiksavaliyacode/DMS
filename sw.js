@@ -1,3 +1,6 @@
+// FIX: Add a reference to the webworker library to provide correct typings for the service worker environment.
+/// <reference lib="webworker" />
+
 const CACHE_NAME = 'rdms-v1';
 const urlsToCache = [
   '/',

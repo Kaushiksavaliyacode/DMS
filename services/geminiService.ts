@@ -46,6 +46,7 @@ export const generateDispatchInsights = async (data: DispatchEntry[]): Promise<s
         systemInstruction: "You are an expert supply chain analyst assistant.",
       }
     });
+    // FIX: The 'text' property should be accessed directly, not called as a function.
     return response.text || "Unable to generate insights.";
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
