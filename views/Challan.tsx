@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChallanEntry, ChallanItem, MOCK_PARTIES, PaymentType, ChallanType } from '../types';
-import { Plus, Trash2, IndianRupee, Receipt, Save, RotateCcw, User, Filter, X, FileText, CheckCircle2, Clock, Pencil } from 'lucide-react';
+import { Plus, Trash2, Receipt, Save, RotateCcw, User, Filter, X, CheckCircle2, Clock, Pencil, Search, RefreshCw } from 'lucide-react';
 
 interface ChallanProps {
   data: ChallanEntry[];
@@ -13,6 +13,7 @@ interface ChallanProps {
 
 type FilterRange = 'today' | '7days' | '30days' | 'custom';
 type EntryMode = 'unpaid' | 'cash' | 'job';
+type SummaryFilter = 'all' | 'cash' | 'unpaid';
 
 export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onDelete, isAdmin = false }) => {
   // Form State
@@ -35,6 +36,8 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
   const [filterRange, setFilterRange] = useState<FilterRange>('today');
   const [customDate, setCustomDate] = useState(new Date().toISOString().split('T')[0]);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [summaryFilter, setSummaryFilter] = useState<SummaryFilter>('all');
 
   // --- Derived State ---
   const grandTotal = useMemo(() => items.reduce((sum, item) => sum + item.total, 0), [items]);
@@ -44,15 +47,14 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
       return data.reduce((acc, curr) => {
           // Cash logic
           if (curr.paymentType === 'cash') {
-              return { ...acc, received: acc.received + curr.grandTotal, count: acc.count + 1 };
+              return { ...acc, received: acc.received + curr.grandTotal };
           }
           // Unpaid logic (Credit payment type AND not jobwork)
           if (curr.paymentType === 'credit' && curr.challanType !== 'jobwork') {
-              return { ...acc, receivable: acc.receivable + curr.grandTotal, count: acc.count + 1 };
+              return { ...acc, receivable: acc.receivable + curr.grandTotal };
           }
-          // Jobwork just adds to count
-          return { ...acc, count: acc.count + 1 };
-      }, { receivable: 0, received: 0, count: 0 });
+          return acc;
+      }, { receivable: 0, received: 0 });
   }, [data]);
 
   // Data Filtering
@@ -61,28 +63,40 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
       today.setHours(0,0,0,0);
 
       return data.filter(d => {
-          const entryDate = new Date(d.date);
-          entryDate.setHours(0,0,0,0);
-          
-          if (filterRange === 'today') {
-              return entryDate.getTime() === today.getTime();
-          } 
-          if (filterRange === '7days') {
-              const sevenDaysAgo = new Date(today);
-              sevenDaysAgo.setDate(today.getDate() - 7);
-              return entryDate >= sevenDaysAgo && entryDate <= today;
+          // 1. Search Filter (Challan No)
+          if (searchTerm && !d.challanNo.toLowerCase().includes(searchTerm.toLowerCase())) {
+              return false;
           }
-          if (filterRange === '30days') {
-              const thirtyDaysAgo = new Date(today);
-              thirtyDaysAgo.setDate(today.getDate() - 30);
-              return entryDate >= thirtyDaysAgo && entryDate <= today;
-          }
-          if (filterRange === 'custom') {
-              return d.date === customDate;
+
+          // 2. Summary Card Filter
+          if (summaryFilter === 'cash' && d.paymentType !== 'cash') return false;
+          if (summaryFilter === 'unpaid' && (d.paymentType !== 'credit' || d.challanType === 'jobwork')) return false;
+
+          // 3. Date Filter (Only apply if NOT searching by Challan No, usually search overrides date)
+          if (!searchTerm) {
+              const entryDate = new Date(d.date);
+              entryDate.setHours(0,0,0,0);
+              
+              if (filterRange === 'today') {
+                  return entryDate.getTime() === today.getTime();
+              } 
+              if (filterRange === '7days') {
+                  const sevenDaysAgo = new Date(today);
+                  sevenDaysAgo.setDate(today.getDate() - 7);
+                  return entryDate >= sevenDaysAgo && entryDate <= today;
+              }
+              if (filterRange === '30days') {
+                  const thirtyDaysAgo = new Date(today);
+                  thirtyDaysAgo.setDate(today.getDate() - 30);
+                  return entryDate >= thirtyDaysAgo && entryDate <= today;
+              }
+              if (filterRange === 'custom') {
+                  return d.date === customDate;
+              }
           }
           return true;
       }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // Newest first
-  }, [data, filterRange, customDate]);
+  }, [data, filterRange, customDate, searchTerm, summaryFilter]);
 
   // --- Handlers ---
   const addItem = () => {
@@ -177,36 +191,56 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
       resetForm();
   };
 
+  const toggleSummaryFilter = (filter: SummaryFilter) => {
+      if (summaryFilter === filter) {
+          setSummaryFilter('all');
+      } else {
+          setSummaryFilter(filter);
+      }
+  };
+
   return (
     <div className="w-full pb-20 space-y-6 font-inter">
         
-        {/* Top Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl border border-emerald-200 p-4 shadow-sm flex items-center justify-between">
-                <div>
+        {/* Top Summary Cards (Clickable Filters) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button 
+                onClick={() => toggleSummaryFilter('cash')}
+                className={`rounded-xl border p-4 shadow-sm flex items-center justify-between transition-all ${
+                    summaryFilter === 'cash' 
+                    ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20' 
+                    : 'bg-white border-emerald-200 hover:border-emerald-300'
+                }`}
+            >
+                <div className="text-left">
                     <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">Total Cash Received</p>
                     <h3 className="text-2xl font-bold text-emerald-700 mt-1 flex items-center">
-                        <IndianRupee className="w-5 h-5 mr-1" /> {summary.received.toLocaleString()}
+                        {Math.floor(summary.received).toLocaleString()}
                     </h3>
                 </div>
-                <div className="p-3 bg-emerald-50 rounded-full"><CheckCircle2 className="w-6 h-6 text-emerald-500" /></div>
-            </div>
-            <div className="bg-white rounded-xl border border-amber-200 p-4 shadow-sm flex items-center justify-between">
-                <div>
+                <div className={`p-3 rounded-full ${summaryFilter === 'cash' ? 'bg-emerald-200' : 'bg-emerald-50'}`}>
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                </div>
+            </button>
+            
+            <button 
+                onClick={() => toggleSummaryFilter('unpaid')}
+                className={`rounded-xl border p-4 shadow-sm flex items-center justify-between transition-all ${
+                    summaryFilter === 'unpaid' 
+                    ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500/20' 
+                    : 'bg-white border-amber-200 hover:border-amber-300'
+                }`}
+            >
+                <div className="text-left">
                     <p className="text-xs font-bold text-amber-600 uppercase tracking-wide">Total Unpaid (Credit)</p>
                     <h3 className="text-2xl font-bold text-amber-700 mt-1 flex items-center">
-                        <IndianRupee className="w-5 h-5 mr-1" /> {summary.receivable.toLocaleString()}
+                        {Math.floor(summary.receivable).toLocaleString()}
                     </h3>
                 </div>
-                <div className="p-3 bg-amber-50 rounded-full"><Clock className="w-6 h-6 text-amber-500" /></div>
-            </div>
-            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
-                <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Total Transactions</p>
-                    <h3 className="text-2xl font-bold text-slate-800 mt-1">{summary.count}</h3>
+                <div className={`p-3 rounded-full ${summaryFilter === 'unpaid' ? 'bg-amber-200' : 'bg-amber-50'}`}>
+                    <Clock className="w-6 h-6 text-amber-600" />
                 </div>
-                <div className="p-3 bg-slate-50 rounded-full"><FileText className="w-6 h-6 text-slate-400" /></div>
-            </div>
+            </button>
         </div>
 
         <div className={`grid grid-cols-1 ${isAdmin ? 'lg:grid-cols-1' : 'lg:grid-cols-12'} gap-8`}>
@@ -271,7 +305,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                     <input placeholder="Size" value={itemSize} onChange={e => setItemSize(e.target.value)} className="px-2 py-2 border border-slate-300 rounded-md text-xs font-bold focus:border-indigo-500 outline-none" />
                                     <input type="number" placeholder="Wt" value={itemWeight} onChange={e => setItemWeight(e.target.value)} className="px-2 py-2 border border-slate-300 rounded-md text-xs font-bold focus:border-indigo-500 outline-none" />
                                     {entryMode !== 'job' ? (
-                                        <input type="number" placeholder="₹" value={itemPrice} onChange={e => setItemPrice(e.target.value)} className="px-2 py-2 border border-slate-300 rounded-md text-xs font-bold focus:border-indigo-500 outline-none" />
+                                        <input type="number" placeholder="Price" value={itemPrice} onChange={e => setItemPrice(e.target.value)} className="px-2 py-2 border border-slate-300 rounded-md text-xs font-bold focus:border-indigo-500 outline-none" />
                                     ) : (
                                         <div className="flex items-center justify-center text-[10px] text-slate-400 font-bold border border-slate-200 bg-slate-100 rounded-md">No Price</div>
                                     )}
@@ -287,7 +321,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                             <div key={item.id} className="flex justify-between items-center bg-white p-2 rounded border border-slate-200 text-xs">
                                                 <span className="font-bold text-slate-700">{item.size} <span className="text-slate-400 font-normal">({item.weight}kg)</span></span>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-bold">₹{item.total}</span>
+                                                    <span className="font-bold">{Math.floor(item.total).toLocaleString()}</span>
                                                     <button type="button" onClick={() => removeItem(item.id)}><Trash2 className="w-3 h-3 text-red-400" /></button>
                                                 </div>
                                             </div>
@@ -298,7 +332,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
 
                             <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                                 <span className="font-bold text-slate-500 text-sm">Grand Total</span>
-                                <span className="text-xl font-bold text-slate-900">₹ {grandTotal.toLocaleString()}</span>
+                                <span className="text-xl font-bold text-slate-900">{Math.floor(grandTotal).toLocaleString()}</span>
                             </div>
 
                             <button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
@@ -314,13 +348,32 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                 <div className="bg-white rounded-xl shadow-md shadow-slate-200/50 border border-slate-200 flex flex-col h-full min-h-[600px]">
                     
                     {/* Filters Toolbar */}
-                    <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center bg-slate-50/50">
-                        <div className="flex items-center gap-2">
-                             <Receipt className="w-5 h-5 text-slate-600" />
-                             <h3 className="font-bold text-slate-800">Transaction Book</h3>
+                    <div className="p-4 border-b border-slate-200 flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center bg-slate-50/50">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full xl:w-auto">
+                            <div className="flex items-center gap-2">
+                                <Receipt className="w-5 h-5 text-slate-600" />
+                                <h3 className="font-bold text-slate-800 whitespace-nowrap">Challan</h3>
+                            </div>
+                            
+                            {/* Search Input */}
+                            <div className="relative w-full sm:w-64">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input 
+                                    type="text" 
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Search Challan No..." 
+                                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-xs font-bold focus:border-indigo-500 outline-none"
+                                />
+                            </div>
                         </div>
                         
                         <div className="flex flex-wrap items-center gap-2">
+                            {summaryFilter !== 'all' && (
+                                <button onClick={() => setSummaryFilter('all')} className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-md bg-slate-200 text-slate-600 hover:bg-slate-300">
+                                    <RefreshCw className="w-3 h-3" /> Reset Filter
+                                </button>
+                            )}
                             <button onClick={() => setFilterRange('today')} className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-colors ${filterRange === 'today' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}`}>Today</button>
                             <button onClick={() => setFilterRange('7days')} className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-colors ${filterRange === '7days' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}`}>7 Days</button>
                             <button onClick={() => setFilterRange('30days')} className={`px-3 py-1.5 text-xs font-bold rounded-md border transition-colors ${filterRange === '30days' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}`}>30 Days</button>
@@ -349,7 +402,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                 {filteredData.length === 0 ? (
                                     <tr>
                                         <td colSpan={6} className="text-center py-20 text-slate-400">
-                                            No records found for selected period.
+                                            No records found.
                                         </td>
                                     </tr>
                                 ) : (
@@ -384,7 +437,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                                         </span>
                                                     </td>
                                                     <td className="px-3 py-2.5 text-sm font-bold text-slate-900 text-right border-r border-slate-200/50">
-                                                        {row.challanType === 'jobwork' ? '-' : `₹ ${row.grandTotal.toLocaleString()}`}
+                                                        {row.challanType === 'jobwork' ? '-' : `${Math.floor(row.grandTotal).toLocaleString()}`}
                                                     </td>
                                                     <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
                                                         {!isAdmin && (
@@ -413,8 +466,8 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                                                             <tr key={idx} className="border-b border-slate-100 last:border-0">
                                                                                 <td className="px-4 py-2 text-xs font-bold text-slate-700">{item.size}</td>
                                                                                 <td className="px-4 py-2 text-xs font-bold text-slate-600 text-right">{item.weight} kg</td>
-                                                                                <td className="px-4 py-2 text-xs font-bold text-slate-600 text-right">{item.price > 0 ? `₹${item.price}` : '-'}</td>
-                                                                                <td className="px-4 py-2 text-xs font-bold text-slate-800 text-right">{item.total > 0 ? `₹${item.total}` : '-'}</td>
+                                                                                <td className="px-4 py-2 text-xs font-bold text-slate-600 text-right">{item.price > 0 ? `${Math.floor(item.price)}` : '-'}</td>
+                                                                                <td className="px-4 py-2 text-xs font-bold text-slate-800 text-right">{item.total > 0 ? `${Math.floor(item.total)}` : '-'}</td>
                                                                             </tr>
                                                                         ))}
                                                                     </tbody>
