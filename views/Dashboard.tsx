@@ -1,9 +1,8 @@
-
 import React, { useMemo, useState } from 'react';
 import { DispatchEntry, DispatchStatus, ChallanEntry } from '../types';
 import { 
   Package, Scale, TrendingUp, Layers, Calendar, Filter, XCircle, ChevronLeft, ChevronRight, Table as TableIcon,
-  CheckCircle2, Clock, PlayCircle, Receipt, Truck
+  CheckCircle2, Clock, PlayCircle, Receipt
 } from 'lucide-react';
 import { 
   Tooltip, ResponsiveContainer, 
@@ -201,15 +200,15 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
   };
 
   return (
-    <div className="flex flex-col h-full gap-6 font-sans">
+    <div className="flex flex-col h-full gap-6 font-poppins">
       
       {/* Top Dashboard Toggles */}
       <div className="flex justify-center">
-          <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200 inline-flex">
-              <button onClick={() => setDashboardMode('production')} className={`px-6 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${dashboardMode === 'production' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
+          <div className="bg-white p-1 rounded-full shadow-sm border border-slate-200 inline-flex">
+              <button onClick={() => setDashboardMode('production')} className={`px-6 py-2 text-sm font-bold rounded-full flex items-center gap-2 transition-all ${dashboardMode === 'production' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
                   <Layers className="w-4 h-4" /> Production
               </button>
-              <button onClick={() => setDashboardMode('challan')} className={`px-6 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-all ${dashboardMode === 'challan' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
+              <button onClick={() => setDashboardMode('challan')} className={`px-6 py-2 text-sm font-bold rounded-full flex items-center gap-2 transition-all ${dashboardMode === 'challan' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
                   <Receipt className="w-4 h-4" /> Challan Book
               </button>
           </div>
@@ -222,8 +221,8 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
             {/* KPI Section */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 shrink-0">
                 <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <KPICard title="Total Weight" value={totals.weight.toLocaleString()} sub="kg" icon={Scale} colorClass="text-indigo-600" bgClass="bg-indigo-100" />
-                    <KPICard title="Total 📦" value={totals.bundles.toLocaleString()} sub="pkg" icon={Package} colorClass="text-blue-600" bgClass="bg-blue-100" />
+                    <KPICard title="Total Weight" value={totals.weight.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})} sub="kg" icon={Scale} colorClass="text-indigo-600" bgClass="bg-indigo-100" />
+                    <KPICard title="Total Bundles" value={totals.bundles.toLocaleString()} sub="pkg" icon={Package} colorClass="text-blue-600" bgClass="bg-blue-100" />
                     <KPICard title="Total Pcs" value={totals.pcs.toLocaleString()} sub="pcs" icon={Layers} colorClass="text-emerald-600" bgClass="bg-emerald-100" />
                     <KPICard title="Avg Weight" value={(totals.count > 0 ? totals.weight / totals.count : 0).toFixed(0)} sub="kg / entry" icon={TrendingUp} colorClass="text-amber-600" bgClass="bg-amber-100" />
                 </div>
@@ -322,35 +321,35 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
                                             
                                             {/* Desktop Table */}
                                             <table className="w-full text-left hidden md:table">
-                                                <thead className="bg-white text-[10px] uppercase text-slate-400 border-b border-slate-100">
+                                                <thead className="bg-slate-800 text-[10px] uppercase text-white border-b border-slate-700">
                                                     <tr>
-                                                        <th className="px-4 py-2 font-bold w-[5%] text-center">Load</th>
-                                                        <th className="px-4 py-2 font-bold w-[20%]">Size</th>
-                                                        <th className="px-4 py-2 font-bold text-center w-[15%]">Rolls</th>
-                                                        <th className="px-4 py-2 font-bold text-center w-[15%]">Pcs</th>
-                                                        <th className="px-4 py-2 font-bold text-right w-[20%]">Weight</th>
-                                                        <th className="px-4 py-2 font-bold text-center w-[25%]">Status</th>
+                                                        <th className="px-4 py-3 font-bold w-[5%] text-center">Status</th>
+                                                        <th className="px-4 py-3 font-bold w-[20%]">Size</th>
+                                                        <th className="px-4 py-3 font-bold text-center w-[15%]">Bundles</th>
+                                                        <th className="px-4 py-3 font-bold text-center w-[15%]">Pcs</th>
+                                                        <th className="px-4 py-3 font-bold text-right w-[20%]">Weight</th>
+                                                        <th className="px-4 py-3 font-bold text-center w-[25%]">Job State</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="text-xs font-bold text-slate-700 divide-y divide-slate-50">
+                                                <tbody className="text-xs font-bold text-slate-700 divide-y divide-slate-100">
                                                     {items.map(entry => {
                                                         const isMM = entry.size.toLowerCase().includes('mm');
                                                         return (
-                                                            <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors">
-                                                                <td className="px-4 py-2.5 text-center">
-                                                                    {entry.isLoaded ? <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" /> : <div className="w-4 h-4 rounded-full border-2 border-slate-200 mx-auto"></div>}
+                                                            <tr key={entry.id} className="hover:bg-slate-50 transition-colors">
+                                                                <td className="px-4 py-3 text-center">
+                                                                    {entry.isLoaded ? <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto" /> : <div className="w-3 h-3 rounded-full border-2 border-slate-300 mx-auto"></div>}
                                                                 </td>
-                                                                <td className="px-4 py-2.5">{entry.size}</td>
-                                                                <td className="px-4 py-2.5 text-center">{entry.bundle} 📦</td>
-                                                                <td className="px-4 py-2.5 text-center">
-                                                                    {isMM ? <span className="text-[9px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded">ROLLS</span> : entry.pcs}
+                                                                <td className="px-4 py-3 text-slate-900">{entry.size}</td>
+                                                                <td className="px-4 py-3 text-center">{entry.bundle} 📦</td>
+                                                                <td className="px-4 py-3 text-center">
+                                                                    {isMM ? <span className="text-[9px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold">BUNDLES</span> : entry.pcs}
                                                                 </td>
-                                                                <td className="px-4 py-2.5 text-right text-indigo-600">{entry.weight} kg</td>
-                                                                <td className="px-4 py-2.5 text-center">
-                                                                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] uppercase ${
-                                                                        entry.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
-                                                                        entry.status === 'running' ? 'bg-blue-50 text-blue-600' : 
-                                                                        'bg-amber-50 text-amber-600'
+                                                                <td className="px-4 py-3 text-right text-indigo-700 font-bold">{entry.weight.toFixed(3)} kg</td>
+                                                                <td className="px-4 py-3 text-center">
+                                                                    <span className={`inline-block px-2 py-0.5 rounded-[4px] text-[9px] uppercase font-bold ${
+                                                                        entry.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 
+                                                                        entry.status === 'running' ? 'bg-blue-100 text-blue-700' : 
+                                                                        'bg-amber-100 text-amber-700'
                                                                     }`}>
                                                                         {entry.status}
                                                                     </span>
@@ -361,18 +360,18 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
                                                 </tbody>
                                             </table>
 
-                                            {/* Mobile List View (Fixes Overlapping) */}
-                                            <div className="md:hidden divide-y divide-slate-100">
+                                            {/* Mobile List View (Compact Box Style) */}
+                                            <div className="md:hidden p-2 grid grid-cols-1 gap-2">
                                                 {items.map(entry => {
                                                     const isMM = entry.size.toLowerCase().includes('mm');
                                                     return (
-                                                        <div key={entry.id} className="p-3 flex flex-col gap-2">
+                                                        <div key={entry.id} className="p-3 rounded-lg border border-slate-100 bg-white flex flex-col gap-3 shadow-sm">
                                                             <div className="flex justify-between items-start">
                                                                 <div className="flex items-center gap-2">
                                                                     {entry.isLoaded && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
-                                                                    <div className="font-bold text-slate-800 text-sm">{entry.size}</div>
+                                                                    <div className="font-bold text-slate-900 text-sm">{entry.size}</div>
                                                                 </div>
-                                                                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                                                                <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold ${
                                                                     entry.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
                                                                     entry.status === 'running' ? 'bg-blue-50 text-blue-600' : 
                                                                     'bg-amber-50 text-amber-600'
@@ -380,15 +379,18 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
                                                                     {entry.status}
                                                                 </span>
                                                             </div>
-                                                            <div className="grid grid-cols-3 gap-2 text-xs font-bold text-slate-600">
-                                                                <div className="bg-slate-50 p-1.5 rounded text-center">
+                                                            <div className="grid grid-cols-3 gap-2 text-xs font-bold text-slate-700">
+                                                                <div className="bg-slate-50 p-2 rounded text-center border border-slate-100">
+                                                                    <div className="text-[9px] text-slate-400 uppercase">Bundles</div>
                                                                     {entry.bundle} 📦
                                                                 </div>
-                                                                <div className="bg-slate-50 p-1.5 rounded text-center">
-                                                                    {isMM ? 'ROLLS' : `${entry.pcs} Pcs`}
+                                                                <div className="bg-slate-50 p-2 rounded text-center border border-slate-100">
+                                                                    <div className="text-[9px] text-slate-400 uppercase">Pcs</div>
+                                                                    {isMM ? '-' : entry.pcs}
                                                                 </div>
-                                                                <div className="bg-indigo-50 text-indigo-600 p-1.5 rounded text-center">
-                                                                    {entry.weight} kg
+                                                                <div className="bg-indigo-50 text-indigo-700 p-2 rounded text-center border border-indigo-100">
+                                                                    <div className="text-[9px] text-indigo-400 uppercase">Weight</div>
+                                                                    {entry.weight.toFixed(3)}
                                                                 </div>
                                                             </div>
                                                         </div>

@@ -1,17 +1,16 @@
-
-const CACHE_NAME = 'rdms-v53';
+const CACHE_NAME = 'rdms-v60';
 const urlsToCache = [
   '/',
   '/index.html',
 ];
 
 self.addEventListener('install', event => {
-  self.skipWaiting(); // Force activation immediately
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
         return cache.addAll(urlsToCache).catch(err => {
-           console.warn('Failed to cache some assets during install:', err);
+           console.warn('Failed to cache assets:', err);
         });
       })
   );
@@ -36,12 +35,11 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            // Delete old caches to ensure users get the new version
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
-  return self.clients.claim(); // Take control of all pages immediately
+  return self.clients.claim();
 });
