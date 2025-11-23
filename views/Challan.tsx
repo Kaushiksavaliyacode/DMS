@@ -182,8 +182,12 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
           resetForm();
       } catch (e: any) {
           console.error("Error saving challan", e);
-          setErrorMsg(e.message || "Failed to save");
-          alert(`Error saving: ${e.message}. Please check permissions.`);
+          let msg = e.message || 'Unknown error';
+          if (msg.includes("Missing or insufficient permissions")) {
+            msg = "PERMISSION ERROR: Go to Firebase Console > Firestore > Rules and set 'allow read, write: if true;'";
+          }
+          setErrorMsg(msg);
+          alert(msg);
       } finally {
           setIsSubmitting(false);
       }

@@ -143,8 +143,12 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
         }));
     } catch (error: any) {
         console.error("Save failed:", error);
-        setNotification({ type: 'error', message: `Failed to save: ${error.message || 'Unknown error'}` });
-        alert(`Error: ${error.message || 'Check your internet or Firebase permissions.'}`);
+        let msg = error.message || 'Unknown error';
+        if (msg.includes("Missing or insufficient permissions")) {
+            msg = "PERMISSION ERROR: Go to Firebase Console > Firestore > Rules and set 'allow read, write: if true;'";
+        }
+        setNotification({ type: 'error', message: "Save Failed" });
+        alert(msg);
     } finally {
         setIsSubmitting(false);
         setTimeout(() => setNotification(null), 3000);
