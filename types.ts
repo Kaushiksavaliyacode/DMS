@@ -11,6 +11,7 @@ export interface DispatchEntry {
   pcs: number; // Renamed from meter
   bundle: number;
   status: DispatchStatus;
+  isLoaded?: boolean; // Track if item is loaded in vehicle
   timestamp: number;
 }
 

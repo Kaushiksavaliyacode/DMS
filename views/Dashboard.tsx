@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { DispatchEntry, DispatchStatus, ChallanEntry } from '../types';
 import { 
   Package, Scale, TrendingUp, Layers, Calendar, Filter, XCircle, ChevronLeft, ChevronRight, Table as TableIcon,
-  CheckCircle2, Clock, PlayCircle, Receipt
+  CheckCircle2, Clock, PlayCircle, Receipt, Truck
 } from 'lucide-react';
 import { 
   Tooltip, ResponsiveContainer, 
@@ -223,7 +223,7 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 shrink-0">
                 <div className="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-4">
                     <KPICard title="Total Weight" value={totals.weight.toLocaleString()} sub="kg" icon={Scale} colorClass="text-indigo-600" bgClass="bg-indigo-100" />
-                    <KPICard title="Total Bundles" value={totals.bundles.toLocaleString()} sub="pkg" icon={Package} colorClass="text-blue-600" bgClass="bg-blue-100" />
+                    <KPICard title="Total 📦" value={totals.bundles.toLocaleString()} sub="pkg" icon={Package} colorClass="text-blue-600" bgClass="bg-blue-100" />
                     <KPICard title="Total Pcs" value={totals.pcs.toLocaleString()} sub="pcs" icon={Layers} colorClass="text-emerald-600" bgClass="bg-emerald-100" />
                     <KPICard title="Avg Weight" value={(totals.count > 0 ? totals.weight / totals.count : 0).toFixed(0)} sub="kg / entry" icon={TrendingUp} colorClass="text-amber-600" bgClass="bg-amber-100" />
                 </div>
@@ -324,11 +324,12 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
                                             <table className="w-full text-left hidden md:table">
                                                 <thead className="bg-white text-[10px] uppercase text-slate-400 border-b border-slate-100">
                                                     <tr>
+                                                        <th className="px-4 py-2 font-bold w-[5%] text-center">Load</th>
                                                         <th className="px-4 py-2 font-bold w-[20%]">Size</th>
                                                         <th className="px-4 py-2 font-bold text-center w-[15%]">Rolls</th>
                                                         <th className="px-4 py-2 font-bold text-center w-[15%]">Pcs</th>
                                                         <th className="px-4 py-2 font-bold text-right w-[20%]">Weight</th>
-                                                        <th className="px-4 py-2 font-bold text-center w-[30%]">Status</th>
+                                                        <th className="px-4 py-2 font-bold text-center w-[25%]">Status</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="text-xs font-bold text-slate-700 divide-y divide-slate-50">
@@ -336,6 +337,9 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
                                                         const isMM = entry.size.toLowerCase().includes('mm');
                                                         return (
                                                             <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors">
+                                                                <td className="px-4 py-2.5 text-center">
+                                                                    {entry.isLoaded ? <CheckCircle2 className="w-4 h-4 text-emerald-500 mx-auto" /> : <div className="w-4 h-4 rounded-full border-2 border-slate-200 mx-auto"></div>}
+                                                                </td>
                                                                 <td className="px-4 py-2.5">{entry.size}</td>
                                                                 <td className="px-4 py-2.5 text-center">{entry.bundle} 📦</td>
                                                                 <td className="px-4 py-2.5 text-center">
@@ -364,7 +368,10 @@ export const DashboardView: React.FC<DashboardProps> = ({ data, challanData, onD
                                                     return (
                                                         <div key={entry.id} className="p-3 flex flex-col gap-2">
                                                             <div className="flex justify-between items-start">
-                                                                <div className="font-bold text-slate-800 text-sm">{entry.size}</div>
+                                                                <div className="flex items-center gap-2">
+                                                                    {entry.isLoaded && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                                                                    <div className="font-bold text-slate-800 text-sm">{entry.size}</div>
+                                                                </div>
                                                                 <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
                                                                     entry.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
                                                                     entry.status === 'running' ? 'bg-blue-50 text-blue-600' : 
