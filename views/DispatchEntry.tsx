@@ -386,23 +386,30 @@ export const DispatchEntryView: React.FC<DispatchEntryProps> = ({
 
                          return (
                              <div key={key} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                                 <div className="bg-white px-4 py-3 border-b border-slate-100 flex justify-between items-center">
-                                      <div className="flex items-center gap-3">
-                                          <span className="text-xs font-bold bg-slate-50 border border-slate-200 px-2 py-1 rounded text-slate-600">{date}</span>
-                                          <h4 className="font-bold text-slate-900 text-base">{party}</h4>
-                                          <button 
-                                              onClick={() => sendBulkWhatsApp(items)} 
-                                              className="ml-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs font-bold"
-                                              title="Share on WhatsApp"
-                                          >
-                                              <Send className="w-3 h-3" /> Share
-                                          </button>
+                                 <div className="bg-white px-3 py-3 border-b border-slate-100">
+                                      <div className="flex flex-col gap-2">
+                                          <div className="flex items-center justify-between gap-2">
+                                              <div className="flex items-center gap-2 overflow-hidden">
+                                                  <span className="text-[10px] font-bold bg-slate-50 border border-slate-200 px-1.5 py-0.5 rounded text-slate-500 whitespace-nowrap">{date}</span>
+                                                  <h4 className="font-bold text-slate-900 text-sm truncate">{party}</h4>
+                                              </div>
+                                              <button 
+                                                  onClick={() => sendBulkWhatsApp(items)} 
+                                                  className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-md flex items-center gap-1 text-[10px] font-bold shrink-0"
+                                                  title="Share on WhatsApp"
+                                              >
+                                                  <Send className="w-3 h-3" /> Share
+                                              </button>
+                                          </div>
+                                          <div className="flex justify-end">
+                                               <span className="text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 px-2 py-1 rounded">Total Bundles: {totalBundles}</span>
+                                          </div>
                                       </div>
-                                      <span className="text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded">Total Bundles: {totalBundles}</span>
                                  </div>
                                  
                                  <div className="p-3 space-y-3">
-                                     {items.map(entry => (
+                                     {items.map(entry => {
+                                         return (
                                          <div key={entry.id} className={`relative p-3 rounded-lg border transition-all ${editingId === entry.id ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
                                              {/* Header Row: Status, Edit, Delete */}
                                              <div className="flex justify-between items-center mb-2">
