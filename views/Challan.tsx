@@ -393,7 +393,6 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                     <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300">Challan #</th>
                                     <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300">Date</th>
                                     <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 w-1/3">Party Name</th>
-                                    <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 text-center">Type</th>
                                     <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-r border-slate-300 text-right">Total</th>
                                     <th className="px-3 py-3 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-300 text-center">Action</th>
                                 </tr>
@@ -401,42 +400,47 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                             <tbody className="bg-white">
                                 {filteredData.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="text-center py-20 text-slate-400">
+                                        <td colSpan={5} className="text-center py-20 text-slate-400">
                                             No records found.
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredData.map((row) => {
-                                        // Determine Row Style
-                                        let rowClass = "hover:bg-slate-50 transition-colors border-b border-slate-200";
+                                        // Determine Row Style based on paymentType/challanType
+                                        let rowClass = "bg-white border-b border-slate-200 cursor-pointer transition-colors";
+                                        let textClass = "text-slate-600"; // Default
+                                        let borderClass = "";
+
                                         if (row.paymentType === 'cash') {
-                                            rowClass = "bg-emerald-50/60 hover:bg-emerald-100 border-b border-emerald-200 border-l-4 border-l-emerald-500";
+                                            // Cash: Green text, white background
+                                            textClass = "text-emerald-700";
+                                            rowClass += " hover:bg-emerald-50";
+                                            borderClass = "border-l-4 border-l-emerald-500";
                                         } else if (row.challanType === 'jobwork') {
-                                            rowClass = "bg-white hover:bg-slate-50 border-b border-slate-200 border-l-4 border-l-slate-400";
+                                            // Job: Slate text, white background
+                                            textClass = "text-slate-700";
+                                            rowClass += " hover:bg-slate-50";
+                                            borderClass = "border-l-4 border-l-slate-400";
                                         } else {
-                                            // Unpaid / Credit
-                                            rowClass = "bg-red-50/60 hover:bg-red-100 border-b border-red-200 border-l-4 border-l-red-500";
+                                            // Unpaid: Red text, white background
+                                            textClass = "text-red-700";
+                                            rowClass += " hover:bg-red-50";
+                                            borderClass = "border-l-4 border-l-red-500";
                                         }
+
+                                        // Apply border class
+                                        rowClass = `${rowClass} ${borderClass}`;
 
                                         return (
                                             <React.Fragment key={row.id}>
                                                 <tr 
-                                                    className={`${rowClass} cursor-pointer`} 
+                                                    className={rowClass} 
                                                     onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)}
                                                 >
-                                                    <td className="px-3 py-2.5 text-xs font-bold text-slate-500 border-r border-slate-200/50">{row.challanNo || '-'}</td>
-                                                    <td className="px-3 py-2.5 text-xs font-bold text-slate-600 border-r border-slate-200/50 whitespace-nowrap">{row.date}</td>
-                                                    <td className="px-3 py-2.5 text-sm font-bold text-slate-800 border-r border-slate-200/50">{row.partyName}</td>
-                                                    <td className="px-3 py-2.5 text-center border-r border-slate-200/50">
-                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                                            row.paymentType === 'cash' ? 'text-emerald-700' :
-                                                            row.challanType === 'jobwork' ? 'text-slate-600' :
-                                                            'text-red-700'
-                                                        }`}>
-                                                            {row.paymentType === 'cash' ? 'CASH' : row.challanType === 'jobwork' ? 'JOB' : 'UNPAID'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-3 py-2.5 text-sm font-bold text-slate-900 text-right border-r border-slate-200/50">
+                                                    <td className={`px-3 py-2.5 text-xs font-bold border-r border-slate-200/50 ${textClass}`}>{row.challanNo || '-'}</td>
+                                                    <td className={`px-3 py-2.5 text-xs font-bold border-r border-slate-200/50 whitespace-nowrap ${textClass}`}>{row.date}</td>
+                                                    <td className={`px-3 py-2.5 text-sm font-bold border-r border-slate-200/50 ${textClass}`}>{row.partyName}</td>
+                                                    <td className={`px-3 py-2.5 text-sm font-bold text-right border-r border-slate-200/50 ${textClass}`}>
                                                         {row.challanType === 'jobwork' ? '-' : `${Math.floor(row.grandTotal).toLocaleString()}`}
                                                     </td>
                                                     <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -450,7 +454,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                                 {/* Expanded Row for Items */}
                                                 {expandedRow === row.id && (
                                                     <tr className="bg-slate-50 border-b border-slate-200 shadow-inner">
-                                                        <td colSpan={6} className="px-4 py-4 md:px-10">
+                                                        <td colSpan={5} className="px-4 py-4 md:px-10">
                                                             <div className="bg-white border border-slate-300 rounded-lg overflow-hidden max-w-2xl">
                                                                 <table className="w-full text-left">
                                                                     <thead className="bg-slate-100 border-b border-slate-300">
