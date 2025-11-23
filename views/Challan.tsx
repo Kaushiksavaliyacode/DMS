@@ -407,24 +407,24 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                 ) : (
                                     filteredData.map((row) => {
                                         // Determine Row Style based on paymentType/challanType
-                                        let rowClass = "bg-white border-b border-slate-200 cursor-pointer transition-colors";
-                                        let textClass = "text-slate-600"; // Default
+                                        let rowClass = "cursor-pointer transition-colors";
+                                        let textClass = "";
                                         let borderClass = "";
 
                                         if (row.paymentType === 'cash') {
-                                            // Cash: Green text, white background
-                                            textClass = "text-emerald-700";
-                                            rowClass += " hover:bg-emerald-50";
+                                            // Cash: Light Green Background, Dark Green Text
+                                            rowClass = "bg-emerald-50 hover:bg-emerald-100 border-b border-emerald-100 cursor-pointer";
+                                            textClass = "text-emerald-800";
                                             borderClass = "border-l-4 border-l-emerald-500";
                                         } else if (row.challanType === 'jobwork') {
-                                            // Job: Slate text, white background
+                                            // Job: White Background, Slate Text
+                                            rowClass = "bg-white hover:bg-slate-50 border-b border-slate-200 cursor-pointer";
                                             textClass = "text-slate-700";
-                                            rowClass += " hover:bg-slate-50";
                                             borderClass = "border-l-4 border-l-slate-400";
                                         } else {
-                                            // Unpaid: Red text, white background
-                                            textClass = "text-red-700";
-                                            rowClass += " hover:bg-red-50";
+                                            // Unpaid: Light Red Background, Dark Red Text
+                                            rowClass = "bg-red-50 hover:bg-red-100 border-b border-red-100 cursor-pointer";
+                                            textClass = "text-red-800";
                                             borderClass = "border-l-4 border-l-red-500";
                                         }
 
@@ -453,7 +453,7 @@ export const ChallanView: React.FC<ChallanProps> = ({ data, onAdd, onUpdate, onD
                                                 
                                                 {/* Expanded Row for Items */}
                                                 {expandedRow === row.id && (
-                                                    <tr className="bg-slate-50 border-b border-slate-200 shadow-inner">
+                                                    <tr className="bg-white border-b border-slate-200 shadow-inner">
                                                         <td colSpan={5} className="px-4 py-4 md:px-10">
                                                             <div className="bg-white border border-slate-300 rounded-lg overflow-hidden max-w-2xl">
                                                                 <table className="w-full text-left">
