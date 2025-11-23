@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Shield, User, Lock, ArrowRight, Box } from 'lucide-react';
+import { Shield, User, Lock, ArrowRight, Box, AlertCircle } from 'lucide-react';
 import { UserRole } from '../types';
+import { auth } from '../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 interface LoginProps {
   onLogin: (role: UserRole) => void;
@@ -13,33 +15,38 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate network delay for effect
-    setTimeout(() => {
-      let isValid = false;
-
-      // Validate credentials based on selected role
-      if (selectedRole === 'admin') {
-        if (username === 'Admin' && password === 'Admin.123') {
-          isValid = true;
-        }
-      } else if (selectedRole === 'user') {
-        if (username === 'User' && password === 'User.123') {
-          isValid = true;
-        }
+    try {
+      // Map simple IDs to secure email format for Firebase
+      // Admin -> admin@rdms.app
+      // User -> user@rdms.app
+      const email = `${username.toLowerCase().trim()}@rdms.app`;
+      
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      // If successful, pass the role (in a real app, role should be in user claims, but we map it here for simplicity)
+      if (selectedRole === 'admin' && username.toLowerCase() !== 'admin') {
+         throw new Error("Invalid Role for this ID");
       }
+      
+      onLogin(selectedRole);
 
-      if (isValid) {
-        onLogin(selectedRole);
-      } else {
-        setError('Invalid ID or Password');
-        setIsLoading(false);
+    } catch (err: any) {
+      console.error("Login Error", err);
+      let msg = "Invalid Login ID or Password";
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        msg = "User not found or password incorrect.";
+      } else if (err.code === 'auth/too-many-requests') {
+        msg = "Too many failed attempts. Try again later.";
       }
-    }, 800);
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const RoleCard = ({ 
@@ -55,8 +62,8 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
       type="button"
       onClick={() => {
         setSelectedRole(id);
-        setError(''); // Clear error when switching roles
-        setUsername(''); // Optional: clear inputs
+        setError('');
+        setUsername(id === 'admin' ? 'Admin' : 'User'); // Auto-fill suggestion
         setPassword('');
       }}
       className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all duration-300 w-full aspect-square ${
@@ -72,18 +79,14 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-4 font-inter overflow-hidden relative">
-      
-      {/* Background Elements - Light Theme */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-indigo-200/30 rounded-full blur-[100px]"></div>
         <div className="absolute bottom-[10%] right-[10%] w-[30%] h-[30%] bg-blue-200/30 rounded-full blur-[100px]"></div>
       </div>
 
       <div className="w-full max-w-[420px] relative z-10 animate-in fade-in zoom-in duration-500">
-        {/* Card */}
         <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-slate-200/50 border border-white/50 p-8 md:p-10">
           
-          {/* Header */}
           <div className="flex flex-col items-center mb-8">
             <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-slate-900/20 rotate-3 hover:rotate-0 transition-transform duration-500">
               <Box className="w-8 h-8 text-white" />
@@ -92,13 +95,11 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1">Reliance Dispatch Management</p>
           </div>
 
-          {/* Role Selector */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <RoleCard id="admin" icon={Shield} label="Admin" />
             <RoleCard id="user" icon={User} label="User" />
           </div>
 
-          {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-500 uppercase ml-1">Login ID</label>
@@ -110,7 +111,7 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter ID"
+                  placeholder="Enter ID (Admin/User)"
                   className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm font-semibold rounded-xl pl-12 pr-4 py-3.5 focus:outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-400"
                 />
               </div>
@@ -133,7 +134,8 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-lg text-center animate-in slide-in-from-top-1">
+              <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-lg text-center animate-in slide-in-from-top-1 flex items-center justify-center gap-2">
+                <AlertCircle className="w-4 h-4" />
                 {error}
               </div>
             )}
@@ -147,7 +149,7 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
               ) : (
                 <>
-                  Access System
+                  Secure Login
                   <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -156,7 +158,7 @@ export const LoginView: React.FC<LoginProps> = ({ onLogin }) => {
 
           <div className="mt-8 text-center">
              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-               Secure Production Management
+               v2.0 • Secured by Google Firebase
              </p>
           </div>
 

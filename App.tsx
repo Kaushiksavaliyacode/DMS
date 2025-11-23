@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { DispatchEntryView } from './views/DispatchEntry';
@@ -7,6 +6,8 @@ import { AnalyticsView } from './views/Analytics';
 import { ChallanView } from './views/Challan';
 import { LoginView } from './views/Login';
 import { AppView, DispatchEntry, ChallanEntry, UserRole } from './types';
+import { auth } from './firebaseConfig';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { 
   subscribeToDispatch, 
   addDispatchToFire, 
@@ -17,48 +18,73 @@ import {
   updateChallanInFire,
   deleteChallanFromFire
 } from './services/firebaseService';
-
-const AUTH_STORAGE_KEY = 'dispatch_pro_auth';
+import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>('admin'); 
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   
   // --- Data State (Synced via Firebase) ---
   const [dispatchData, setDispatchData] = useState<DispatchEntry[]>([]);
   const [challanData, setChallanData] = useState<ChallanEntry[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
-  // --- Firebase Subscriptions ---
+  // --- Auth Subscription ---
   useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsAuthenticated(true);
+        if (user.email?.startsWith('admin')) {
+          setUserRole('admin');
+        } else {
+          setUserRole('user');
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+      setIsAuthLoading(false);
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
+
+  // --- Data Subscriptions (Only if Authenticated) ---
+  useEffect(() => {
+    if (!isAuthenticated) {
+        setIsDataLoading(false);
+        return;
+    }
+
+    setIsDataLoading(true);
+    
+    let dispatchLoaded = false;
+    let challanLoaded = false;
+
+    const checkLoading = () => {
+        if (dispatchLoaded && challanLoaded) {
+            setIsDataLoading(false);
+        }
+    };
+
     const unsubscribeDispatch = subscribeToDispatch((data) => {
       setDispatchData(data);
+      dispatchLoaded = true;
+      checkLoading();
     });
 
     const unsubscribeChallan = subscribeToChallan((data) => {
       setChallanData(data);
+      challanLoaded = true;
+      checkLoading();
     });
 
     return () => {
       unsubscribeDispatch();
       unsubscribeChallan();
     };
-  }, []);
-
-  useEffect(() => {
-    const savedAuth = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (savedAuth) {
-      try {
-        const { isLoggedIn, role } = JSON.parse(savedAuth);
-        if (isLoggedIn) {
-          setIsAuthenticated(true);
-          setUserRole(role);
-        }
-      } catch (e) {
-        console.error("Auth parse error", e);
-      }
-    }
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -73,69 +99,32 @@ const App: React.FC = () => {
   }, [userRole, isAuthenticated]);
 
   const handleLogin = (role: UserRole) => {
-    setIsAuthenticated(true);
     setUserRole(role);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ isLoggedIn: true, role }));
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+  const handleLogout = async () => {
+    await signOut(auth);
   };
 
-  // --- Dispatch Actions (Connected to Firebase) ---
+  // --- Actions ---
   const handleAddEntry = async (entry: Omit<DispatchEntry, 'id' | 'timestamp'>) => {
-    await addDispatchToFire({
-      ...entry,
-      timestamp: Date.now()
-    });
+    await addDispatchToFire({ ...entry, timestamp: Date.now() });
   };
-
-  const handleUpdateEntry = async (id: string, updates: Partial<DispatchEntry>) => {
-    await updateDispatchInFire(id, updates);
-  };
-
-  const handleDeleteEntry = async (id: string) => {
-    await deleteDispatchFromFire(id);
-  };
-  
+  const handleUpdateEntry = async (id: string, updates: Partial<DispatchEntry>) => await updateDispatchInFire(id, updates);
+  const handleDeleteEntry = async (id: string) => await deleteDispatchFromFire(id);
   const handleBulkDelete = (ids: string[]) => {
-     if (window.confirm(`Are you sure you want to delete ${ids.length} items?`)) {
-        ids.forEach(async (id) => {
-            try {
-                await deleteDispatchFromFire(id);
-            } catch (e) {
-                console.error("Bulk delete error", e);
-            }
-        });
+     if (window.confirm(`Delete ${ids.length} items?`)) {
+        ids.forEach(async (id) => { try { await deleteDispatchFromFire(id); } catch(e){} });
      }
   };
-
   const handleBulkStatusUpdate = (ids: string[], status: any) => { 
-      ids.forEach(async (id) => {
-          try {
-              await updateDispatchInFire(id, { status });
-          } catch (e) {
-              console.error("Bulk update error", e);
-          }
-      });
+      ids.forEach(async (id) => { try { await updateDispatchInFire(id, { status }); } catch(e){} });
   };
-
-  // --- Challan Actions (Connected to Firebase) ---
   const handleAddChallan = async (entry: Omit<ChallanEntry, 'id' | 'timestamp'>) => {
-      await addChallanToFire({
-          ...entry,
-          timestamp: Date.now()
-      });
+      await addChallanToFire({ ...entry, timestamp: Date.now() });
   };
-
-  const handleUpdateChallan = async (id: string, updates: Partial<ChallanEntry>) => {
-      await updateChallanInFire(id, updates);
-  };
-
-  const handleDeleteChallan = async (id: string) => {
-      await deleteChallanFromFire(id);
-  };
+  const handleUpdateChallan = async (id: string, updates: Partial<ChallanEntry>) => await updateChallanInFire(id, updates);
+  const handleDeleteChallan = async (id: string) => await deleteChallanFromFire(id);
 
   const handleExportData = () => {
     const exportObj = { dispatch: dispatchData, challan: challanData };
@@ -151,15 +140,11 @@ const App: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
-    alert("Import is disabled in Cloud Mode.");
-  };
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => { alert("Import disabled in Cloud Mode."); };
 
   const renderView = () => {
-    if (currentView === AppView.CHALLAN) {
-        return <ChallanView data={challanData} onAdd={handleAddChallan} onUpdate={handleUpdateChallan} onDelete={handleDeleteChallan} />;
-    }
-
+    if (currentView === AppView.CHALLAN) return <ChallanView data={challanData} onAdd={handleAddChallan} onUpdate={handleUpdateChallan} onDelete={handleDeleteChallan} />;
+    
     if (userRole === 'user' && currentView === AppView.ENTRY) {
       return (
         <DispatchEntryView 
@@ -178,14 +163,20 @@ const App: React.FC = () => {
     }
 
     switch (currentView) {
-      case AppView.DASHBOARD:
-        return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} onUpdateChallan={handleUpdateChallan} />;
-      case AppView.ANALYTICS:
-        return <AnalyticsView data={dispatchData} />;
-      default:
-        return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} onUpdateChallan={handleUpdateChallan} />;
+      case AppView.DASHBOARD: return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} onUpdateChallan={handleUpdateChallan} />;
+      case AppView.ANALYTICS: return <AnalyticsView data={dispatchData} />;
+      default: return <DashboardView data={dispatchData} challanData={challanData} onDeleteChallan={handleDeleteChallan} onUpdateChallan={handleUpdateChallan} />;
     }
   };
+
+  if (isAuthLoading || (isAuthenticated && isDataLoading)) {
+      return (
+          <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+              <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
+              <p className="text-slate-500 font-bold text-sm animate-pulse">Loading RDMS...</p>
+          </div>
+      );
+  }
 
   if (!isAuthenticated) {
     return <LoginView onLogin={handleLogin} />;
